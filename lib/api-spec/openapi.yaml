@@ -1,15 +1,22 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API for the Violin Practice Tracker
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: practice
+    description: Practice sessions, reports, and calendar
+  - name: repertoire
+    description: Violin repertoire
+  - name: goals
+    description: Practice goals and achievements
+  - name: planner
+    description: Practice planning
 paths:
   /healthz:
     get:
@@ -24,6 +31,408 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /violin/dashboard:
+    get:
+      operationId: getViolinDashboard
+      tags: [practice]
+      summary: Get the current practice dashboard
+      responses:
+        "200":
+          description: Current dashboard metrics calculated from saved records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /violin/sessions:
+    get:
+      operationId: getPracticeSessions
+      tags: [practice]
+      summary: List and filter practice sessions
+      parameters:
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+        - name: pieceId
+          in: query
+          schema: { type: integer }
+        - name: category
+          in: query
+          schema: { $ref: "#/components/schemas/PracticeCategory" }
+      responses:
+        "200":
+          description: Practice sessions matching the filters
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PracticeSession" }
+    post:
+      operationId: startPracticeSession
+      tags: [practice]
+      summary: Start and persist a practice session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PracticeSessionInput" }
+      responses:
+        "201":
+          description: Started session
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PracticeSession" }
+  /violin/sessions/active:
+    get:
+      operationId: getActivePracticeSession
+      tags: [practice]
+      summary: Get the currently running or paused session
+      responses:
+        "200":
+          description: Active session, or null when there is none
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActiveSessionResult" }
+  /violin/sessions/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    patch:
+      operationId: updatePracticeSession
+      tags: [practice]
+      summary: Edit a saved practice session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PracticeSessionUpdate" }
+      responses:
+        "200":
+          description: Updated session
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PracticeSession" }
+        "404": { description: Session not found }
+    delete:
+      operationId: deletePracticeSession
+      tags: [practice]
+      summary: Delete a practice session
+      responses:
+        "204": { description: Session deleted }
+        "404": { description: Session not found }
+  /violin/sessions/{id}/pause:
+    post:
+      operationId: pausePracticeSession
+      tags: [practice]
+      summary: Pause a running practice session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Paused session with elapsed time saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PracticeSession" }
+        "404": { description: Session not found }
+  /violin/sessions/{id}/resume:
+    post:
+      operationId: resumePracticeSession
+      tags: [practice]
+      summary: Resume a paused practice session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Resumed session
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PracticeSession" }
+        "404": { description: Session not found }
+  /violin/sessions/{id}/finish:
+    post:
+      operationId: finishPracticeSession
+      tags: [practice]
+      summary: Finish and save a practice session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinishPracticeSessionInput" }
+      responses:
+        "200":
+          description: Completed session
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PracticeSession" }
+        "404": { description: Session not found }
+  /violin/statistics:
+    get:
+      operationId: getPracticeStatistics
+      tags: [practice]
+      summary: Get practice summaries and breakdowns
+      parameters:
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Statistics computed from completed sessions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PracticeStatistics" }
+  /violin/calendar:
+    get:
+      operationId: getPracticeCalendar
+      tags: [practice]
+      summary: Get activity for a calendar month
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema: { type: string, pattern: "^[0-9]{4}-[0-9]{2}$" }
+      responses:
+        "200":
+          description: Daily practice activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CalendarDay" }
+  /violin/repertoire:
+    get:
+      operationId: getRepertoire
+      tags: [repertoire]
+      summary: List repertoire pieces
+      parameters:
+        - name: includeArchived
+          in: query
+          schema: { type: boolean, default: false }
+      responses:
+        "200":
+          description: Repertoire with computed practice totals
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RepertoirePiece" }
+    post:
+      operationId: createRepertoirePiece
+      tags: [repertoire]
+      summary: Add a repertoire piece
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RepertoirePieceInput" }
+      responses:
+        "201":
+          description: Created piece
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RepertoirePiece" }
+  /violin/repertoire/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    patch:
+      operationId: updateRepertoirePiece
+      tags: [repertoire]
+      summary: Edit or archive a repertoire piece
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RepertoirePieceUpdate" }
+      responses:
+        "200":
+          description: Updated piece
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RepertoirePiece" }
+        "404": { description: Piece not found }
+    delete:
+      operationId: deleteRepertoirePiece
+      tags: [repertoire]
+      summary: Delete a repertoire piece
+      responses:
+        "204": { description: Piece deleted }
+        "404": { description: Piece not found }
+  /violin/goals:
+    get:
+      operationId: getPracticeGoals
+      tags: [goals]
+      summary: List practice goals and their current progress
+      responses:
+        "200":
+          description: Goals with current progress calculated from saved sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PracticeGoal" }
+    post:
+      operationId: createPracticeGoal
+      tags: [goals]
+      summary: Create a practice goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PracticeGoalInput" }
+      responses:
+        "201":
+          description: Created goal
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PracticeGoal" }
+  /violin/goals/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    patch:
+      operationId: updatePracticeGoal
+      tags: [goals]
+      summary: Edit a practice goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PracticeGoalUpdate" }
+      responses:
+        "200":
+          description: Updated goal
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PracticeGoal" }
+        "404": { description: Goal not found }
+    delete:
+      operationId: deletePracticeGoal
+      tags: [goals]
+      summary: Delete a practice goal
+      responses:
+        "204": { description: Goal deleted }
+        "404": { description: Goal not found }
+  /violin/achievements:
+    get:
+      operationId: getPracticeAchievements
+      tags: [goals]
+      summary: Get milestone achievements and actual progress
+      responses:
+        "200":
+          description: Earned and in-progress milestones derived from saved activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PracticeAchievement" }
+  /violin/plans:
+    get:
+      operationId: getPracticePlans
+      tags: [planner]
+      summary: List planned practice blocks in a date range
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Planned practice blocks
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PracticePlan" }
+    post:
+      operationId: createPracticePlan
+      tags: [planner]
+      summary: Plan a practice block
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PracticePlanInput" }
+      responses:
+        "201":
+          description: Created practice block
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PracticePlan" }
+  /violin/plans/summary:
+    get:
+      operationId: getPracticePlanSummary
+      tags: [planner]
+      summary: Compare planned and actual practice time
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Planned and completed seconds for the date range
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PracticePlanSummary" }
+  /violin/plans/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    patch:
+      operationId: updatePracticePlan
+      tags: [planner]
+      summary: Edit a planned practice block or mark it completed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PracticePlanUpdate" }
+      responses:
+        "200":
+          description: Updated practice block
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PracticePlan" }
+        "404": { description: Plan not found }
+    delete:
+      operationId: deletePracticePlan
+      tags: [planner]
+      summary: Delete a planned practice block
+      responses:
+        "204": { description: Plan deleted }
+        "404": { description: Plan not found }
 components:
   schemas:
     HealthStatus:
@@ -33,4 +442,250 @@ components:
           type: string
       required:
         - status
+    PracticeCategory:
+      type: string
+      enum: [technique, scales, intonation, bowing, sight-reading, repertoire, memorisation, other]
+    PracticeStatus:
+      type: string
+      enum: [running, paused, completed]
+    RepertoireStatus:
+      type: string
+      enum: [learning, polishing, performance-ready, completed]
+    GoalType:
+      type: string
+      enum: [daily-minutes, weekly-minutes, piece-minutes, session-count]
+    PracticeSession:
+      type: object
+      required: [id, status, startedAt, finishedAt, elapsedSeconds, activeSince, pieceId, pieceTitle, category, notes, goal, createdAt]
+      properties:
+        id: { type: integer }
+        status: { $ref: "#/components/schemas/PracticeStatus" }
+        startedAt: { type: string, format: date-time }
+        finishedAt: { type: ["string", "null"], format: date-time }
+        elapsedSeconds: { type: integer }
+        activeSince: { type: ["string", "null"], format: date-time }
+        pieceId: { type: ["integer", "null"] }
+        pieceTitle: { type: ["string", "null"] }
+        category: { $ref: "#/components/schemas/PracticeCategory" }
+        notes: { type: string }
+        goal: { type: string }
+        createdAt: { type: string, format: date-time }
+    PracticeSessionInput:
+      type: object
+      required: [category]
+      properties:
+        pieceId: { type: ["integer", "null"] }
+        category: { $ref: "#/components/schemas/PracticeCategory" }
+        goal: { type: string, maxLength: 2000 }
+    PracticeSessionUpdate:
+      type: object
+      properties:
+        pieceId: { type: ["integer", "null"] }
+        category: { $ref: "#/components/schemas/PracticeCategory" }
+        notes: { type: string, maxLength: 5000 }
+        goal: { type: string, maxLength: 2000 }
+        startedAt: { type: string, format: date-time }
+        elapsedSeconds: { type: integer, minimum: 0 }
+    FinishPracticeSessionInput:
+      type: object
+      required: [notes]
+      properties:
+        notes: { type: string, maxLength: 5000 }
+    ActiveSessionResult:
+      type: object
+      required: [session]
+      properties:
+        session: { anyOf: [{ $ref: "#/components/schemas/PracticeSession" }, { type: "null" }] }
+    RepertoirePiece:
+      type: object
+      required: [id, title, composer, status, difficulty, focusAreas, notes, targetPerformanceDate, totalPracticeSeconds, sessionCount, progress, archived, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        composer: { type: string }
+        status: { $ref: "#/components/schemas/RepertoireStatus" }
+        difficulty: { type: integer, minimum: 1, maximum: 5 }
+        focusAreas:
+          type: array
+          items: { type: string }
+        notes: { type: string }
+        targetPerformanceDate: { type: ["string", "null"], format: date }
+        totalPracticeSeconds: { type: integer }
+        sessionCount: { type: integer }
+        progress: { type: integer, minimum: 0, maximum: 100 }
+        archived: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    RepertoirePieceInput:
+      type: object
+      required: [title, composer, status, difficulty]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        composer: { type: string, minLength: 1, maxLength: 200 }
+        status: { $ref: "#/components/schemas/RepertoireStatus" }
+        difficulty: { type: integer, minimum: 1, maximum: 5 }
+        focusAreas:
+          type: array
+          items: { type: string }
+        notes: { type: string, maxLength: 5000 }
+        targetPerformanceDate: { type: ["string", "null"], format: date }
+        progress: { type: integer, minimum: 0, maximum: 100 }
+        archived: { type: boolean }
+    RepertoirePieceUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        composer: { type: string, minLength: 1, maxLength: 200 }
+        status: { $ref: "#/components/schemas/RepertoireStatus" }
+        difficulty: { type: integer, minimum: 1, maximum: 5 }
+        focusAreas:
+          type: array
+          items: { type: string }
+        notes: { type: string, maxLength: 5000 }
+        targetPerformanceDate: { type: ["string", "null"], format: date }
+        progress: { type: integer, minimum: 0, maximum: 100 }
+        archived: { type: boolean }
+    PracticeGoal:
+      type: object
+      required: [id, type, targetValue, pieceId, pieceTitle, active, currentValue, periodStart, periodEnd]
+      properties:
+        id: { type: integer }
+        type: { $ref: "#/components/schemas/GoalType" }
+        targetValue: { type: integer, minimum: 1 }
+        pieceId: { type: ["integer", "null"] }
+        pieceTitle: { type: ["string", "null"] }
+        active: { type: boolean }
+        currentValue: { type: integer }
+        periodStart: { type: string, format: date }
+        periodEnd: { type: string, format: date }
+    PracticeGoalInput:
+      type: object
+      required: [type, targetValue]
+      properties:
+        type: { $ref: "#/components/schemas/GoalType" }
+        targetValue: { type: integer, minimum: 1, maximum: 10000 }
+        pieceId: { type: ["integer", "null"] }
+        active: { type: boolean }
+    PracticeGoalUpdate:
+      type: object
+      properties:
+        type: { $ref: "#/components/schemas/GoalType" }
+        targetValue: { type: integer, minimum: 1, maximum: 10000 }
+        pieceId: { type: ["integer", "null"] }
+        active: { type: boolean }
+    PracticeAchievement:
+      type: object
+      required: [key, title, description, progress, target, earnedAt]
+      properties:
+        key: { type: string }
+        title: { type: string }
+        description: { type: string }
+        progress: { type: integer }
+        target: { type: integer }
+        earnedAt: { type: ["string", "null"], format: date-time }
+    PracticePlan:
+      type: object
+      required: [id, date, pieceId, pieceTitle, category, plannedMinutes, goal, completed, createdAt]
+      properties:
+        id: { type: integer }
+        date: { type: string, format: date }
+        pieceId: { type: ["integer", "null"] }
+        pieceTitle: { type: ["string", "null"] }
+        category: { $ref: "#/components/schemas/PracticeCategory" }
+        plannedMinutes: { type: integer, minimum: 1 }
+        goal: { type: string }
+        completed: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    PracticePlanInput:
+      type: object
+      required: [date, category, plannedMinutes]
+      properties:
+        date: { type: string, format: date }
+        pieceId: { type: ["integer", "null"] }
+        category: { $ref: "#/components/schemas/PracticeCategory" }
+        plannedMinutes: { type: integer, minimum: 1, maximum: 240 }
+        goal: { type: string, maxLength: 2000 }
+        completed: { type: boolean }
+    PracticePlanUpdate:
+      type: object
+      properties:
+        date: { type: string, format: date }
+        pieceId: { type: ["integer", "null"] }
+        category: { $ref: "#/components/schemas/PracticeCategory" }
+        plannedMinutes: { type: integer, minimum: 1, maximum: 240 }
+        goal: { type: string, maxLength: 2000 }
+        completed: { type: boolean }
+    PracticePlanSummary:
+      type: object
+      required: [plannedSeconds, actualSeconds, blocks, completedBlocks]
+      properties:
+        plannedSeconds: { type: integer }
+        actualSeconds: { type: integer }
+        blocks: { type: integer }
+        completedBlocks: { type: integer }
+    Dashboard:
+      type: object
+      required: [todaySeconds, weekSeconds, weeklyGoalSeconds, streakDays, recentSessions, repertoire, upcomingPerformances, achievements]
+      properties:
+        todaySeconds: { type: integer }
+        weekSeconds: { type: integer }
+        weeklyGoalSeconds: { type: integer }
+        streakDays: { type: integer }
+        recentSessions:
+          type: array
+          items: { $ref: "#/components/schemas/PracticeSession" }
+        repertoire:
+          type: array
+          items: { $ref: "#/components/schemas/RepertoirePiece" }
+        upcomingPerformances:
+          type: array
+          items: { $ref: "#/components/schemas/RepertoirePiece" }
+        achievements:
+          type: array
+          items: { $ref: "#/components/schemas/PracticeAchievement" }
+    DailyPracticeStat:
+      type: object
+      required: [date, seconds, sessionCount]
+      properties:
+        date: { type: string, format: date }
+        seconds: { type: integer }
+        sessionCount: { type: integer }
+    PiecePracticeStat:
+      type: object
+      required: [pieceId, title, seconds, sessionCount]
+      properties:
+        pieceId: { type: ["integer", "null"] }
+        title: { type: string }
+        seconds: { type: integer }
+        sessionCount: { type: integer }
+    CategoryPracticeStat:
+      type: object
+      required: [category, seconds, sessionCount]
+      properties:
+        category: { $ref: "#/components/schemas/PracticeCategory" }
+        seconds: { type: integer }
+        sessionCount: { type: integer }
+    PracticeStatistics:
+      type: object
+      required: [totalSeconds, sessionCount, averageDailySeconds, bestDay, daily, byPiece, byCategory]
+      properties:
+        totalSeconds: { type: integer }
+        sessionCount: { type: integer }
+        averageDailySeconds: { type: integer }
+        bestDay: { anyOf: [{ $ref: "#/components/schemas/DailyPracticeStat" }, { type: "null" }] }
+        daily:
+          type: array
+          items: { $ref: "#/components/schemas/DailyPracticeStat" }
+        byPiece:
+          type: array
+          items: { $ref: "#/components/schemas/PiecePracticeStat" }
+        byCategory:
+          type: array
+          items: { $ref: "#/components/schemas/CategoryPracticeStat" }
+    CalendarDay:
+      type: object
+      required: [date, seconds, sessionCount]
+      properties:
+        date: { type: string, format: date }
+        seconds: { type: integer }
+        sessionCount: { type: integer }
 

@@ -1,10 +1,11 @@
-# [Project name]
+# Violin Practice Tracker
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A responsive violin practice companion that tracks sessions, repertoire, goals, plans, and real progress.
 
 ## Run & Operate
 
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/violin-practice-tracker run dev` — run the web app
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
@@ -22,23 +23,30 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/violin-practice-tracker` — React/Vite application
+- `artifacts/api-server/src/routes/violin-*.ts` — API routes for tracker data
+- `lib/api-spec/openapi.yaml` — API contract source
+- `lib/db/src/schema/violin.ts` — PostgreSQL schema
+- `README.md` — local setup and environment documentation
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Timer state persists in the database as accumulated seconds plus an active interval start, preserving timing through pauses and reloads.
+- Progress and milestones are derived from completed sessions; the app does not seed fictional practice records.
+- OpenAPI is the source for generated React Query hooks and server-side Zod validation.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+The app provides a persistent practice timer, editable history, repertoire manager, practice goals and achievements, calendar, and flexible planner.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Keep the repository straightforward to connect to GitHub and continue developing in Bolt.new; document setup and environment needs and never hardcode secrets.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Re-run API codegen after every change to `lib/api-spec/openapi.yaml`.
+- Use `pnpm --filter @workspace/db run push` for development schema changes; review production schema changes in Publish.
 
 ## Pointers
 

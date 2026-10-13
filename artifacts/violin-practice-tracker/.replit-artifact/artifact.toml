@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Violin Practice Tracker"
+description = "A polished practice companion for serious violin students to track timed sessions, manage repertoire, plan practice, set healthy goals, and see accurate progress over time."
+version = "1.0.0"
+id = "artifacts/violin-practice-tracker"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25894
+
+[services.development]
+run = "pnpm --filter @workspace/violin-practice-tracker run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/violin-practice-tracker", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/violin-practice-tracker/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25894"
+BASE_PATH = "/"
