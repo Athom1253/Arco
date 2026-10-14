@@ -3460,6 +3460,20 @@ a {
   background: #e7d9b6;
 }
 
+.beat-lights span.beat-group-start {
+  border-color: #9eaa8f;
+  background: #d2dbc9;
+}
+
+.beat-lights.beat-lights-dense {
+  gap: 2px;
+}
+
+.beat-lights-dense span {
+  width: 6px;
+  height: 6px;
+}
+
 .beat-lights span.beat-active {
   border-color: #537457;
   background: #64896a;
@@ -3476,6 +3490,45 @@ a {
   font-family: var(--app-font-serif);
   font-size: 17px;
   text-align: center;
+}
+
+.grouping-readout {
+  margin-top: -11px;
+  color: #96988d;
+  font-size: 8px;
+  letter-spacing: .04em;
+  text-align: center;
+}
+
+.subdivision-preview {
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+}
+
+.subdivision-preview > span {
+  color: #929286;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.subdivision-preview-pips {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.subdivision-preview-pips span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b9c8b3;
+}
+
+.subdivision-preview-pips span.preview-downbeat {
+  background: #c6a55e;
 }
 
 .metronome-settings {
@@ -3519,11 +3572,43 @@ a {
   border-color: #bfcdb9;
 }
 
+.choice-button:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+}
+
 .choice-button.selected {
   border-color: #8ca18a;
   color: #315847;
   background: #eaf0e5;
   font-weight: 700;
+}
+
+.metronome-help {
+  margin: -2px 0 8px;
+  color: #888d82;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.swing-setting:disabled {
+  opacity: .82;
+}
+
+.metronome-toggle-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid #eeeadf;
+}
+
+.metronome-toggle-row .toggle-setting {
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 1px solid #e9e5d9;
+  border-radius: 10px;
+  background: #fbfaf5;
 }
 
 .toggle-setting {
@@ -4040,12 +4125,21 @@ a {
 
   .beat-orbit {
     width: 108px;
-    height: 108px;
-    gap: 10px;
+    min-height: 108px;
+    height: auto;
+    gap: 8px;
   }
 
   .beat-lights {
     gap: 6px;
+  }
+
+  .beat-lights-dense {
+    gap: 2px;
+  }
+
+  .metronome-toggle-row {
+    grid-template-columns: 1fr;
   }
 
   .beat-lights span {

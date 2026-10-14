@@ -3,16 +3,19 @@ import { Link } from 'wouter';
 import { useGetRepertoire } from '@workspace/api-client-react';
 import { Activity, AudioLines, CircleStop, Clock3, Headphones, Minus, Music2, Pause, Play, Plus, RotateCcw, ShieldCheck, Timer, Volume2 } from 'lucide-react';
 import { Card, PageHeading } from '@/components/Primitives';
+import {
+  buildMetronomePattern,
+  getBaseBeatIntervalSeconds,
+  getGroupStartIndices,
+  isSwingAvailable,
+  METRONOME_METERS,
+  METRONOME_SUBDIVISIONS,
+  type MeterSignature,
+  type SubdivisionId,
+  type SwingFeel,
+} from '@/lib/metronome';
 import { detectPitch, pitchName } from '@/lib/pitch-detection';
 
-const signatures = [
-  { label: '2 / 4', beats: 2, unit: 4 },
-  { label: '3 / 4', beats: 3, unit: 4 },
-  { label: '4 / 4', beats: 4, unit: 4 },
-  { label: '5 / 4', beats: 5, unit: 4 },
-  { label: '6 / 8', beats: 6, unit: 8 },
-];
-const subdivisionChoices = [1, 2, 3, 4];
 const referenceNotes = [
   { name: 'G3', frequency: 196 },
   { name: 'D4', frequency: 293.66 },
@@ -21,6 +24,7 @@ const referenceNotes = [
 ];
 
 type TunerStatus = 'idle' | 'requesting' | 'listening' | 'denied' | 'no-device' | 'unsupported' | 'insecure' | 'error';
+type ClickKind = 'downbeat' | 'group' | 'beat' | 'subdivision';
 
 function getAudioContextConstructor(): typeof AudioContext | null {
   if (typeof window === 'undefined') {
@@ -33,20 +37,28 @@ function getAudioContextConstructor(): typeof AudioContext | null {
 
 function scheduleMetronomeClick(
   context: AudioContext,
-  strong: boolean,
+  kind: ClickKind,
   atTime: number,
   onEnded: () => void,
 ): OscillatorNode | null {
   if (context.state !== 'running') {
     return null;
   }
+  const profile: Record<ClickKind, { frequency: number; peak: number }> = {
+    downbeat: { frequency: 1120, peak: 0.19 },
+    group: { frequency: 930, peak: 0.145 },
+    beat: { frequency: 760, peak: 0.11 },
+    subdivision: { frequency: 610, peak: 0.065 },
+  };
+  const { frequency, peak } = profile[kind];
+  const clickLength = 0.026;
   const oscillator = context.createOscillator();
   const gain = context.createGain();
   oscillator.type = 'sine';
-  oscillator.frequency.value = strong ? 1120 : 760;
+  oscillator.frequency.value = frequency;
   gain.gain.setValueAtTime(0.001, atTime);
-  gain.gain.exponentialRampToValueAtTime(strong ? 0.19 : 0.11, atTime + 0.003);
-  gain.gain.exponentialRampToValueAtTime(0.001, atTime + 0.06);
+  gain.gain.exponentialRampToValueAtTime(peak, atTime + 0.003);
+  gain.gain.exponentialRampToValueAtTime(0.001, atTime + clickLength - 0.003);
   oscillator.connect(gain);
   gain.connect(context.destination);
   oscillator.onended = () => {
@@ -55,15 +67,17 @@ function scheduleMetronomeClick(
     onEnded();
   };
   oscillator.start(atTime);
-  oscillator.stop(atTime + 0.065);
+  oscillator.stop(atTime + clickLength);
   return oscillator;
 }
 
 export default function Toolkit() {
   const repertoireQuery = useGetRepertoire();
   const [bpm, setBpm] = useState(84);
-  const [signature, setSignature] = useState(signatures[2]);
-  const [subdivision, setSubdivision] = useState(1);
+  const [signature, setSignature] = useState<MeterSignature>(METRONOME_METERS[2]);
+  const [subdivision, setSubdivision] = useState<SubdivisionId>('quarter');
+  const [subdivisionClicks, setSubdivisionClicks] = useState(true);
+  const [swing, setSwing] = useState<SwingFeel>('straight');
   const [accent, setAccent] = useState(true);
   const [playing, setPlaying] = useState(false);
   const [metronomeError, setMetronomeError] = useState('');
@@ -90,22 +104,67 @@ export default function Toolkit() {
       return;
     }
 
-    let currentBeat = 0;
-    let currentSubdivision = 0;
-    let nextNoteTime = context.currentTime + 0.05;
+    const pattern = buildMetronomePattern(
+      signature,
+      subdivision,
+      subdivisionClicks,
+      swing,
+    );
+    const beatIntervalSeconds = getBaseBeatIntervalSeconds(bpm, signature);
+    const measureDurationSeconds = beatIntervalSeconds * signature.beats;
+    let measureStartTime = context.currentTime + 0.05;
+    let patternIndex = 0;
     let cancelled = false;
     const visualTimers = new Set<number>();
     const scheduledNodes = new Set<OscillatorNode>();
+    const advancePattern = () => {
+      patternIndex += 1;
+      if (patternIndex >= pattern.length) {
+        patternIndex = 0;
+        measureStartTime += measureDurationSeconds;
+      }
+    };
+    const handleAudioStateChange = () => {
+      if (!cancelled && context.state !== 'running') {
+        setMetronomeError('Audio was paused by the browser. Press Start to continue the metronome.');
+        setPlaying(false);
+      }
+    };
+    context.addEventListener('statechange', handleAudioStateChange);
+
     const scheduler = () => {
       if (cancelled) return;
-      while (nextNoteTime < context.currentTime + 0.12) {
-        const beatForClick = currentBeat;
-        const isBeatStart = currentSubdivision === 0;
+      const now = context.currentTime;
+      if (now - measureStartTime > measureDurationSeconds) {
+        const missedMeasures = Math.floor(
+          (now - measureStartTime) / measureDurationSeconds,
+        );
+        measureStartTime += missedMeasures * measureDurationSeconds;
+      }
+
+      while (!cancelled) {
+        const event = pattern[patternIndex];
+        const noteTime =
+          measureStartTime + event.offsetBeats * beatIntervalSeconds;
+        if (noteTime >= context.currentTime + 0.12) {
+          break;
+        }
+        if (noteTime < context.currentTime - 0.015) {
+          advancePattern();
+          continue;
+        }
+
+        const clickKind: ClickKind =
+          event.kind === 'subdivision'
+            ? 'subdivision'
+            : event.beatIndex === 0
+              ? accent ? 'downbeat' : 'beat'
+              : event.groupStart ? 'group' : 'beat';
         let scheduledNode: OscillatorNode | null = null;
         scheduledNode = scheduleMetronomeClick(
           context,
-          isBeatStart && accent && currentBeat === 0,
-          nextNoteTime,
+          clickKind,
+          noteTime,
           () => {
             if (scheduledNode) {
               scheduledNodes.delete(scheduledNode);
@@ -115,21 +174,15 @@ export default function Toolkit() {
         if (scheduledNode) {
           scheduledNodes.add(scheduledNode);
         }
-        if (isBeatStart) {
-          const delay = Math.max(0, (nextNoteTime - context.currentTime) * 1000);
+        if (event.kind === 'beat') {
+          const delay = Math.max(0, (noteTime - context.currentTime) * 1000);
           const visualTimer = window.setTimeout(() => {
             visualTimers.delete(visualTimer);
-            setBeat(beatForClick);
+            setBeat(event.beatIndex);
           }, delay);
           visualTimers.add(visualTimer);
         }
-        currentSubdivision += 1;
-        if (currentSubdivision >= subdivision) {
-          currentSubdivision = 0;
-          currentBeat = (currentBeat + 1) % signature.beats;
-        }
-        const beatMs = (60000 / bpm) * (signature.unit === 8 ? 0.5 : 1);
-        nextNoteTime += beatMs / subdivision / 1000;
+        advancePattern();
       }
     };
     scheduler();
@@ -137,6 +190,7 @@ export default function Toolkit() {
     return () => {
       cancelled = true;
       window.clearInterval(interval);
+      context.removeEventListener('statechange', handleAudioStateChange);
       visualTimers.forEach((timer) => window.clearTimeout(timer));
       visualTimers.clear();
       scheduledNodes.forEach((node) => {
@@ -149,7 +203,7 @@ export default function Toolkit() {
       scheduledNodes.clear();
       setBeat(-1);
     };
-  }, [playing, bpm, signature, subdivision, accent]);
+  }, [playing, bpm, signature, subdivision, subdivisionClicks, swing, accent]);
 
   const releaseTuner = () => {
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
@@ -363,6 +417,18 @@ export default function Toolkit() {
 
   const elapsedSeconds = Math.floor(stopwatchElapsed / 1000);
   const audioSupported = Boolean(getAudioContextConstructor());
+  const subdivisionChoice = METRONOME_SUBDIVISIONS.find(
+    (choice) => choice.id === subdivision,
+  )!;
+  const groupStartIndices = getGroupStartIndices(signature);
+  const swingAvailable = isSwingAvailable(
+    signature,
+    subdivision,
+    subdivisionClicks,
+  );
+  const groupingText = signature.groups.join(' + ');
+  const groupingUnit = signature.unit === 8 ? 'eighths' : 'quarter notes';
+  const pulseUnit = signature.unit === 8 ? 'eighth-note' : 'quarter-note';
   const tunerMessage = {
     idle: 'Allow microphone access to listen for a note.',
     requesting: 'Waiting for microphone permission…',
@@ -387,20 +453,31 @@ export default function Toolkit() {
             </div>
             <div className="metronome-display">
               <div className="tempo-readout">
-                <span className="tempo-caption">PULSE PER MINUTE</span>
-                <div className="tempo-number"><button type="button" aria-label="Decrease tempo by one beat per minute" onClick={() => setBpm((value) => Math.max(30, value - 1))} data-testid="button-tempo-decrease"><Minus size={18} /></button><strong aria-live="polite" data-testid="text-tempo">{bpm}</strong><button type="button" aria-label="Increase tempo by one beat per minute" onClick={() => setBpm((value) => Math.min(240, value + 1))} data-testid="button-tempo-increase"><Plus size={18} /></button></div>
-                <label className="tempo-slider-label" htmlFor="tempo-slider">Tempo: {bpm} BPM, {signature.unit === 8 ? 'eighth-note' : 'quarter-note'} pulse</label>
+                <span className="tempo-caption">{pulseUnit.toUpperCase()} PULSE PER MINUTE</span>
+                <div className="tempo-number"><button type="button" aria-label={`Decrease tempo by one ${pulseUnit} pulse per minute`} onClick={() => setBpm((value) => Math.max(30, value - 1))} data-testid="button-tempo-decrease"><Minus size={18} /></button><strong aria-live="polite" data-testid="text-tempo">{bpm}</strong><button type="button" aria-label={`Increase tempo by one ${pulseUnit} pulse per minute`} onClick={() => setBpm((value) => Math.min(240, value + 1))} data-testid="button-tempo-increase"><Plus size={18} /></button></div>
+                <label className="tempo-slider-label" htmlFor="tempo-slider">Tempo: {bpm} {pulseUnit} pulses per minute</label>
                 <input id="tempo-slider" className="tempo-slider" type="range" min="30" max="240" value={bpm} onChange={(event) => setBpm(Number(event.target.value))} aria-label="Tempo in beats per minute" data-testid="input-tempo-slider" />
               </div>
-              <div className="beat-orbit" role="img" aria-label={`Beat ${beat >= 0 ? beat + 1 : 0} of ${signature.beats}${playing ? ', metronome playing' : ', metronome stopped'}`}>
-                <div className="beat-lights">{Array.from({ length: signature.beats }, (_, index) => <span key={index} className={`${beat === index ? 'beat-active' : ''} ${index === 0 ? 'beat-first' : ''}`} />)}</div>
+              <div className="beat-orbit" role="img" aria-label={`${beat >= 0 ? `Beat ${beat + 1} of ${signature.beats}` : `No active beat`} in ${signature.label}, grouped ${groupingText} ${groupingUnit}. ${subdivisionChoice.label}, ${subdivisionChoice.clicksPerQuarter} evenly spaced clicks per quarter note.${playing ? ' Metronome playing.' : ' Metronome stopped.'}`}>
+                <div className={`beat-lights ${signature.beats >= 9 ? 'beat-lights-dense' : ''}`}>{Array.from({ length: signature.beats }, (_, index) => <span key={index} className={`${beat === index ? 'beat-active' : ''} ${index === 0 ? 'beat-first' : ''} ${groupStartIndices.includes(index) && index !== 0 ? 'beat-group-start' : ''}`} />)}</div>
                 <span className="measure-readout">{signature.label}</span>
+                <span className="grouping-readout">Grouped {groupingText}</span>
+                <div className="subdivision-preview" aria-hidden="true">
+                  <span>Quarter-note grid</span>
+                  <div className="subdivision-preview-pips">
+                    {Array.from({ length: subdivisionChoice.clicksPerQuarter }, (_, index) => <span key={index} className={index === 0 ? 'preview-downbeat' : ''} />)}
+                  </div>
+                </div>
               </div>
             </div>
             <div className="metronome-settings">
-              <fieldset className="tool-setting"><legend>Time signature</legend><div className="choice-row">{signatures.map((item) => <button type="button" className={`choice-button ${signature.label === item.label ? 'selected' : ''}`} key={item.label} onClick={() => { setSignature(item); setBeat(-1); }} aria-pressed={signature.label === item.label} data-testid={`button-meter-${item.label.replaceAll(' ', '')}`}>{item.label}</button>)}</div></fieldset>
-              <fieldset className="tool-setting"><legend>Subdivisions</legend><div className="choice-row">{subdivisionChoices.map((count) => <button type="button" className={`choice-button ${subdivision === count ? 'selected' : ''}`} key={count} onClick={() => setSubdivision(count)} aria-pressed={subdivision === count} aria-label={`${count} equal subdivision${count === 1 ? '' : 's'} per beat`} data-testid={`button-subdivision-${count}`}>{['Beat', '2 notes', 'Triplets', '4 notes'][count - 1]}</button>)}</div></fieldset>
-              <label className="toggle-setting"><input type="checkbox" checked={accent} onChange={(event) => setAccent(event.target.checked)} data-testid="toggle-accent" /><span className="toggle-visual" /><span><strong>Accent beat one</strong><small>Make the downbeat distinct</small></span></label>
+              <fieldset className="tool-setting"><legend>Time signature</legend><div className="choice-row">{METRONOME_METERS.map((item) => <button type="button" className={`choice-button ${signature.label === item.label ? 'selected' : ''}`} key={item.label} onClick={() => { setSignature(item); setBeat(-1); }} aria-pressed={signature.label === item.label} data-testid={`button-meter-${item.label.replaceAll(' ', '')}`}>{item.label}</button>)}</div></fieldset>
+              <fieldset className="tool-setting"><legend>Subdivision notes</legend><p className="metronome-help">The selected note grid is added to the meter beats. Turn subdivision clicks off to hear the beats alone.</p><div className="choice-row subdivision-choice-row">{METRONOME_SUBDIVISIONS.map((choice) => <button type="button" className={`choice-button ${subdivision === choice.id ? 'selected' : ''}`} key={choice.id} onClick={() => setSubdivision(choice.id)} aria-pressed={subdivision === choice.id} data-testid={`button-subdivision-${choice.id}`}>{choice.label}</button>)}</div></fieldset>
+              <fieldset className="tool-setting swing-setting" disabled={!swingAvailable} aria-describedby="swing-help"><legend>Swing feel</legend><div className="choice-row"><button type="button" className={`choice-button ${swing === 'straight' ? 'selected' : ''}`} onClick={() => setSwing('straight')} aria-pressed={swing === 'straight'}>Straight</button><button type="button" className={`choice-button ${swing === 'light' ? 'selected' : ''}`} onClick={() => setSwing('light')} aria-pressed={swing === 'light'}>Light swing</button><button type="button" className={`choice-button ${swing === 'shuffle' ? 'selected' : ''}`} onClick={() => setSwing('shuffle')} aria-pressed={swing === 'shuffle'}>Shuffle</button></div><p id="swing-help" className="metronome-help">{swingAvailable ? 'Light swing uses a 3:2 eighth-note pair; shuffle uses 2:1.' : 'To use swing, enable subdivision clicks, select Eighth notes, and choose a quarter-note meter.'}</p></fieldset>
+              <div className="metronome-toggle-row">
+                <label className="toggle-setting"><input type="checkbox" checked={accent} onChange={(event) => setAccent(event.target.checked)} data-testid="toggle-accent" /><span className="toggle-visual" /><span><strong>Accent beat one</strong><small>Make the first beat distinct</small></span></label>
+                <label className="toggle-setting"><input type="checkbox" checked={subdivisionClicks} onChange={(event) => setSubdivisionClicks(event.target.checked)} data-testid="toggle-subdivision-clicks" /><span className="toggle-visual" /><span><strong>Subdivision clicks</strong><small>Add the selected note grid</small></span></label>
+              </div>
             </div>
             <div className="metronome-actions"><button className="button button-primary metronome-start" type="button" onClick={toggleMetronome} disabled={!audioSupported && !playing} aria-label={playing ? 'Stop metronome' : 'Start metronome'} data-testid="button-metronome-toggle">{playing ? <CircleStop size={18} /> : <Play size={18} />}{playing ? 'Stop metronome' : 'Start metronome'}</button><button className="button button-secondary tap-button" type="button" onClick={tapTempo} data-testid="button-tap-tempo"><Timer size={16} />Tap tempo</button><span className="keyboard-hint">Tap a few times to find the pulse</span></div>
             {(metronomeError || !audioSupported) && <p className="toolkit-audio-message" role="status">{metronomeError || 'Web Audio is unavailable in this browser, so sound playback is disabled.'}</p>}
