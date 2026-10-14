@@ -29,6 +29,7 @@ import {
   getSessionWithPiece,
   toSession,
 } from "../lib/violin-data";
+import { normalizeDateRangeQuery } from "../lib/query-utils";
 
 const router: IRouter = Router();
 
@@ -49,7 +50,9 @@ router.get("/violin/sessions/active", async (_req, res): Promise<void> => {
 });
 
 router.get("/violin/sessions", async (req, res): Promise<void> => {
-  const query = GetPracticeSessionsQueryParams.safeParse(req.query);
+  const query = GetPracticeSessionsQueryParams.safeParse(
+    normalizeDateRangeQuery(req.query),
+  );
   if (!query.success) {
     res.status(400).json({ error: query.error.message });
     return;

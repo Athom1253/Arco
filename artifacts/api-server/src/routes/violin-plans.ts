@@ -22,6 +22,7 @@ import {
   dateOfSession,
   getCompletedSessionRows,
 } from "../lib/violin-data";
+import { normalizeDateRangeQuery } from "../lib/query-utils";
 
 const router: IRouter = Router();
 
@@ -67,7 +68,9 @@ async function getPlanRow(id: number) {
 }
 
 router.get("/violin/plans", async (req, res): Promise<void> => {
-  const query = GetPracticePlansQueryParams.safeParse(req.query);
+  const query = GetPracticePlansQueryParams.safeParse(
+    normalizeDateRangeQuery(req.query),
+  );
   if (!query.success) {
     res.status(400).json({ error: query.error.message });
     return;
@@ -130,7 +133,9 @@ router.post("/violin/plans", async (req, res): Promise<void> => {
 });
 
 router.get("/violin/plans/summary", async (req, res): Promise<void> => {
-  const query = GetPracticePlanSummaryQueryParams.safeParse(req.query);
+  const query = GetPracticePlanSummaryQueryParams.safeParse(
+    normalizeDateRangeQuery(req.query),
+  );
   if (!query.success) {
     res.status(400).json({ error: query.error.message });
     return;

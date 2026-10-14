@@ -12,11 +12,23 @@ import {
   UpdateRepertoirePieceResponse,
 } from "@workspace/api-zod";
 import { asDateString, getPieceRows, toPiece } from "../lib/violin-data";
+import { normalizeBooleanQuery } from "../lib/query-utils";
 
 const router: IRouter = Router();
 
 router.get("/violin/repertoire", async (req, res): Promise<void> => {
-  const query = GetRepertoireQueryParams.safeParse(req.query);
+  const includeArchived = req.query.includeArchived;
+  if (
+    includeArchived !== undefined &&
+    (typeof includeArchived !== "string" ||
+      !["true", "false"].includes(includeArchived))
+  ) {
+    res.status(400).json({ error: "includeArchived must be true or false." });
+    return;
+  }
+  const query = GetRepertoireQueryParams.safeParse(
+    normalizeBooleanQuery(req.query, "includeArchived"),
+  );
   if (!query.success) {
     res.status(400).json({ error: query.error.message });
     return;

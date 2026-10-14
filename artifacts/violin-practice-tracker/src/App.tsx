@@ -10,6 +10,7 @@ import History from '@/pages/History';
 import Repertoire from '@/pages/Repertoire';
 import Goals from '@/pages/Goals';
 import Planner from '@/pages/Planner';
+import Toolkit from '@/pages/Toolkit';
 import NotFound from '@/pages/not-found';
 import {
   Route,
@@ -31,6 +32,7 @@ function Router() {
           <Route path="/repertoire" component={Repertoire} />
           <Route path="/goals" component={Goals} />
           <Route path="/planner" component={Planner} />
+          <Route path="/toolkit" component={Toolkit} />
           <Route component={NotFound} />
         </Switch>
       </Shell>

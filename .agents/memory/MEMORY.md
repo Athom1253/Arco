@@ -1,0 +1,1 @@
+- [Date query normalization](date-query-normalization.md) — HTTP date filters must be converted to `Date` values before generated Zod validation.

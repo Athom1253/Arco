@@ -3278,3 +3278,823 @@ a {
     transition-duration: .01ms !important;
   }
 }
+
+/* Toolkit — compact, tactile instruments for the existing practice room. */
+.toolkit-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.62fr) minmax(260px, .78fr);
+  align-items: start;
+  gap: 19px;
+}
+
+.toolkit-main,
+.toolkit-aside {
+  display: grid;
+  gap: 17px;
+}
+
+.tool-card {
+  padding: 23px;
+}
+
+.tool-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tool-card-heading h2,
+.repertoire-shortcut h2 {
+  margin: 3px 0 0;
+  color: #2d4034;
+  font-family: var(--app-font-serif);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -.025em;
+}
+
+.tool-icon {
+  display: grid;
+  width: 39px;
+  height: 39px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 12px;
+}
+
+.metronome-icon {
+  color: #587457;
+  background: #e7eee3;
+}
+
+.tuner-icon {
+  color: #9a7b3f;
+  background: #f3ecd9;
+}
+
+.stopwatch-icon {
+  color: #a26955;
+  background: #f5e8e2;
+}
+
+.tool-state {
+  padding: 6px 9px;
+  margin-left: auto;
+  border: 1px solid #e8e4d9;
+  border-radius: 20px;
+  color: #83877d;
+  background: #f7f5ee;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.tool-state.state-live {
+  border-color: #d6e4d3;
+  color: #416747;
+  background: #edf4e9;
+}
+
+.metronome-display {
+  display: grid;
+  grid-template-columns: 1fr 190px;
+  align-items: center;
+  gap: 15px;
+  padding: 20px 0 17px;
+  margin-top: 18px;
+  border-top: 1px solid #eeeadf;
+}
+
+.tempo-readout {
+  min-width: 0;
+}
+
+.tempo-caption {
+  color: #929286;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .13em;
+}
+
+.tempo-number {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 2px;
+}
+
+.tempo-number strong {
+  min-width: 88px;
+  color: #2d4938;
+  font-family: var(--app-font-serif);
+  font-size: 59px;
+  font-weight: 500;
+  letter-spacing: -.055em;
+  line-height: 1.08;
+  text-align: center;
+}
+
+.tempo-number button {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #e5e1d6;
+  border-radius: 50%;
+  color: #55705a;
+  background: #faf9f3;
+}
+
+.tempo-number button:hover,
+.tempo-number button:focus-visible {
+  border-color: #bfcdb9;
+  background: #eff3e9;
+}
+
+.tempo-slider-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.tempo-slider {
+  width: min(100%, 275px);
+  height: 5px;
+  margin-top: 10px;
+  accent-color: #507357;
+  cursor: pointer;
+}
+
+.beat-orbit {
+  display: grid;
+  width: 178px;
+  height: 178px;
+  place-content: center;
+  gap: 15px;
+  border: 1px solid #e8e4d8;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fbfaf5 48%, #f4f2e9 100%);
+}
+
+.beat-lights {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.beat-lights span {
+  width: 11px;
+  height: 11px;
+  border: 1px solid #d9d7c9;
+  border-radius: 50%;
+  background: #e7e5d9;
+  transition: transform .1s, background .1s;
+}
+
+.beat-lights span.beat-first {
+  border-color: #c2a767;
+  background: #e7d9b6;
+}
+
+.beat-lights span.beat-active {
+  border-color: #537457;
+  background: #64896a;
+  transform: scale(1.55);
+}
+
+.beat-lights span.beat-active.beat-first {
+  border-color: #ab8b4b;
+  background: #c8aa66;
+}
+
+.measure-readout {
+  color: #798076;
+  font-family: var(--app-font-serif);
+  font-size: 17px;
+  text-align: center;
+}
+
+.metronome-settings {
+  display: grid;
+  gap: 17px;
+  padding: 18px 0 16px;
+  border-top: 1px solid #eeeadf;
+}
+
+.tool-setting {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+.tool-setting legend {
+  margin-bottom: 9px;
+  color: #788076;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.choice-button {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid #e5e1d6;
+  border-radius: 8px;
+  color: #737b70;
+  background: #fbfaf5;
+  font-size: 10px;
+  transition: background .15s, border-color .15s, color .15s;
+}
+
+.choice-button:hover {
+  border-color: #bfcdb9;
+}
+
+.choice-button.selected {
+  border-color: #8ca18a;
+  color: #315847;
+  background: #eaf0e5;
+  font-weight: 700;
+}
+
+.toggle-setting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  cursor: pointer;
+}
+
+.toggle-setting input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.toggle-visual {
+  position: relative;
+  width: 34px;
+  height: 19px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  background: #d8d9ce;
+  transition: background .15s;
+}
+
+.toggle-visual::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fffdf7;
+  content: '';
+  transition: transform .15s;
+}
+
+.toggle-setting input:checked + .toggle-visual {
+  background: #5d7b60;
+}
+
+.toggle-setting input:checked + .toggle-visual::after {
+  transform: translateX(15px);
+}
+
+.toggle-setting input:focus-visible + .toggle-visual {
+  outline: 3px solid rgba(80, 115, 87, .25);
+  outline-offset: 2px;
+}
+
+.toggle-setting strong,
+.toggle-setting small {
+  display: block;
+}
+
+.toggle-setting strong {
+  color: #435346;
+  font-size: 11px;
+}
+
+.toggle-setting small {
+  margin-top: 3px;
+  color: #8b8f85;
+  font-size: 9px;
+}
+
+.metronome-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding-top: 16px;
+  border-top: 1px solid #eeeadf;
+}
+
+.toolkit-audio-message {
+  margin: 10px 0 0;
+  color: #9a554c;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.metronome-start {
+  min-width: 157px;
+}
+
+.tap-button {
+  min-width: 116px;
+}
+
+.keyboard-hint {
+  margin-left: auto;
+  color: #929286;
+  font-size: 9px;
+}
+
+.tuner-card {
+  overflow: hidden;
+}
+
+.tuner-body {
+  display: grid;
+  grid-template-columns: 205px 1fr;
+  align-items: center;
+  gap: 23px;
+  padding: 22px 0;
+  margin-top: 18px;
+  border-top: 1px solid #eeeadf;
+}
+
+.tuner-face {
+  position: relative;
+  display: flex;
+  height: 142px;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #e8e4d8;
+  border-radius: 14px;
+  background: #f7f5ec;
+}
+
+.tuner-face::before {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  width: 1px;
+  height: 18px;
+  background: #bba56a;
+  content: '';
+}
+
+.tuner-needle {
+  position: absolute;
+  top: 20px;
+  left: calc(50% - 1px);
+  width: 2px;
+  height: 39px;
+  border-radius: 3px;
+  background: #4d7255;
+  transform-origin: bottom center;
+  transition: transform .12s ease-out;
+}
+
+.tuner-scale {
+  position: absolute;
+  top: 10px;
+  right: 18px;
+  left: 18px;
+  display: flex;
+  justify-content: space-between;
+  color: #99978a;
+  font-family: var(--app-font-mono);
+  font-size: 8px;
+}
+
+.detected-note {
+  margin-top: 16px;
+  color: #315847;
+  font-family: var(--app-font-serif);
+  font-size: 37px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.tuner-placeholder {
+  color: #adb0a4;
+}
+
+.tuner-cents {
+  margin-top: 6px;
+  color: #7e887d;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.tuner-in-tune .tuner-cents {
+  color: #4d7257;
+}
+
+.tuner-hearing .tuner-cents {
+  color: #a27343;
+}
+
+.tuner-explainer p {
+  margin: 0 0 14px;
+  color: #787f75;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.tuner-caution {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 11px;
+  border: 1px solid #eae4d4;
+  border-radius: 10px;
+  color: #806f49;
+  background: #f6f0e1;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.tuner-caution svg {
+  flex: 0 0 auto;
+}
+
+.tuner-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 11px;
+}
+
+.permission-note {
+  color: #929286;
+  font-size: 9px;
+}
+
+.reference-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 17px;
+  margin-top: 18px;
+  border-top: 1px solid #eeeadf;
+}
+
+.reference-row > div {
+  display: grid;
+  gap: 4px;
+  margin-right: auto;
+}
+
+.reference-row > div .eyebrow {
+  color: #a08d5c;
+}
+
+.reference-row small {
+  color: #8c9086;
+  font-size: 9px;
+}
+
+.reference-tone {
+  display: flex;
+  min-width: 57px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid #e5e1d6;
+  border-radius: 9px;
+  color: #55705a;
+  background: #fbfaf5;
+  font-size: 10px;
+}
+
+.reference-tone:hover {
+  border-color: #bfcdb9;
+  background: #edf2e9;
+}
+
+.reference-tone:disabled,
+.metronome-start:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.compact-tool-heading {
+  align-items: center;
+}
+
+.compact-tool-heading h2 {
+  font-size: 20px;
+}
+
+.stopwatch-time {
+  padding: 18px 0 13px;
+  color: #2d4938;
+  font-family: var(--app-font-mono);
+  font-size: 44px;
+  letter-spacing: -.06em;
+  line-height: 1;
+}
+
+.stopwatch-time small {
+  color: #a2a291;
+  font-size: 21px;
+}
+
+.stopwatch-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stopwatch-actions .button {
+  flex: 1;
+}
+
+.stopwatch-caption {
+  margin: 14px 0 0;
+  color: #898e83;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.toolkit-practice-link {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 12px;
+  margin-top: 13px;
+  border-top: 1px solid #eeeadf;
+  font-size: 10px;
+}
+
+.repertoire-shortcut .section-title {
+  align-items: center;
+}
+
+.repertoire-mark {
+  color: #9a8655;
+}
+
+.tool-repertoire-list {
+  display: grid;
+  margin-top: 15px;
+}
+
+.tool-piece-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 0;
+  border-top: 1px solid #eeeadf;
+}
+
+.tool-piece-row:hover .tool-piece-copy strong {
+  color: #537458;
+}
+
+.tool-piece-mark {
+  display: grid;
+  width: 31px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 7px 10px 10px 7px;
+  color: #8c7544;
+  background: #f2ead4;
+  font-family: var(--app-font-serif);
+  font-size: 16px;
+}
+
+.tool-piece-copy {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 3px;
+}
+
+.tool-piece-copy strong {
+  overflow: hidden;
+  color: #3a4b3d;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool-piece-copy small,
+.tool-piece-status {
+  color: #8b9085;
+  font-size: 8px;
+}
+
+.tool-piece-status {
+  max-width: 80px;
+  text-align: right;
+  text-transform: capitalize;
+}
+
+.toolkit-all-pieces {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 12px;
+  margin-top: 4px;
+  border-top: 1px solid #eeeadf;
+}
+
+.repertoire-message {
+  display: grid;
+  gap: 8px;
+  padding: 21px 2px;
+  color: #858a80;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.toolkit-skeleton {
+  display: grid;
+  gap: 10px;
+  padding: 18px 0;
+}
+
+.toolkit-skeleton span {
+  height: 29px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f0eee5, #f7f5ee, #f0eee5);
+  background-size: 200% 100%;
+  animation: toolkit-shimmer 1.6s linear infinite;
+}
+
+.toolkit-note {
+  display: flex;
+  gap: 13px;
+  padding: 5px 8px;
+}
+
+.toolkit-note-rule {
+  width: 2px;
+  flex: 0 0 auto;
+  border-radius: 3px;
+  background: #c6b278;
+}
+
+.toolkit-note p {
+  margin: 0;
+  color: #718071;
+  font-family: var(--app-font-serif);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.toolkit-page button:focus-visible,
+.toolkit-page a:focus-visible,
+.toolkit-page input:focus-visible {
+  outline: 3px solid rgba(80, 115, 87, .28);
+  outline-offset: 3px;
+}
+
+@keyframes toolkit-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 980px) {
+  .toolkit-layout {
+    grid-template-columns: minmax(0, 1.25fr) minmax(235px, .75fr);
+  }
+
+  .metronome-display {
+    grid-template-columns: 1fr 145px;
+  }
+
+  .beat-orbit {
+    width: 140px;
+    height: 140px;
+  }
+
+  .tuner-body {
+    grid-template-columns: 170px 1fr;
+    gap: 15px;
+  }
+
+  .reference-row {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 767px) {
+  .toolkit-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .toolkit-aside {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .toolkit-note {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .tool-card {
+    padding: 17px;
+    border-radius: 15px;
+  }
+
+  .metronome-display {
+    grid-template-columns: 1fr 112px;
+    gap: 3px;
+  }
+
+  .tempo-number {
+    gap: 8px;
+  }
+
+  .tempo-number strong {
+    min-width: 67px;
+    font-size: 48px;
+  }
+
+  .tempo-number button {
+    width: 28px;
+    height: 28px;
+  }
+
+  .beat-orbit {
+    width: 108px;
+    height: 108px;
+    gap: 10px;
+  }
+
+  .beat-lights {
+    gap: 6px;
+  }
+
+  .beat-lights span {
+    width: 8px;
+    height: 8px;
+  }
+
+  .choice-row {
+    gap: 5px;
+  }
+
+  .choice-button {
+    min-height: 30px;
+    padding: 0 8px;
+    font-size: 9px;
+  }
+
+  .keyboard-hint {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .tuner-body {
+    grid-template-columns: 1fr;
+  }
+
+  .tuner-face {
+    height: 132px;
+  }
+
+  .reference-row {
+    gap: 6px;
+  }
+
+  .reference-row > div {
+    width: 100%;
+    margin: 0 0 4px;
+  }
+
+  .reference-tone {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .toolkit-aside {
+    grid-template-columns: 1fr;
+  }
+
+  .toolkit-note {
+    grid-column: auto;
+  }
+}

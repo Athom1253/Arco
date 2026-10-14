@@ -120,15 +120,37 @@ router.patch("/violin/goals/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  if (parsed.data.type === "piece-minutes" && parsed.data.pieceId == null) {
+  const [currentGoal] = await db
+    .select()
+    .from(practiceGoalsTable)
+    .where(eq(practiceGoalsTable.id, params.data.id))
+    .limit(1);
+  if (!currentGoal) {
+    res.status(404).json({ error: "Practice goal not found." });
+    return;
+  }
+
+  const nextType = parsed.data.type ?? currentGoal.type;
+  const nextTargetValue = parsed.data.targetValue ?? currentGoal.targetValue;
+  const nextPieceId =
+    "pieceId" in parsed.data
+      ? (parsed.data.pieceId ?? null)
+      : currentGoal.pieceId;
+  if (nextTargetValue > goalLimits[nextType]) {
+    res.status(400).json({
+      error: `This goal can be at most ${goalLimits[nextType]} ${nextType === "session-count" ? "sessions" : "minutes"}.`,
+    });
+    return;
+  }
+  if (nextType === "piece-minutes" && nextPieceId == null) {
     res.status(400).json({ error: "Choose a piece for a piece practice goal." });
     return;
   }
-  if (parsed.data.pieceId != null) {
+  if (nextPieceId != null) {
     const [piece] = await db
       .select({ id: repertoireTable.id })
       .from(repertoireTable)
-      .where(eq(repertoireTable.id, parsed.data.pieceId))
+      .where(eq(repertoireTable.id, nextPieceId))
       .limit(1);
     if (!piece) {
       res.status(400).json({ error: "The selected repertoire piece does not exist." });

@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'wouter';
-import { Activity, CalendarDays, ChartNoAxesColumnIncreasing, CircleDot, Goal, LibraryBig, Menu, Music2, Timer, X } from 'lucide-react';
+import { Activity, CalendarDays, ChartNoAxesColumnIncreasing, CircleDot, Goal, LibraryBig, Menu, Music2, Timer, Wrench, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 const links = [
@@ -9,6 +9,7 @@ const links = [
   { href: '/repertoire', label: 'Repertoire', icon: LibraryBig },
   { href: '/goals', label: 'Goals', icon: Goal },
   { href: '/planner', label: 'Planner', icon: CalendarDays },
+  { href: '/toolkit', label: 'Toolkit', icon: Wrench },
 ];
 
 export function Shell({ children }: { children: ReactNode }) {

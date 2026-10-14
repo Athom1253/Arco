@@ -23,6 +23,7 @@ import {
   weekStartDate,
 } from "../lib/violin-data";
 import { buildAchievements, buildStatistics, currentStreak } from "../lib/violin-metrics";
+import { normalizeDateRangeQuery } from "../lib/query-utils";
 
 const router: IRouter = Router();
 
@@ -81,7 +82,9 @@ router.get("/violin/dashboard", async (_req, res): Promise<void> => {
 });
 
 router.get("/violin/statistics", async (req, res): Promise<void> => {
-  const query = GetPracticeStatisticsQueryParams.safeParse(req.query);
+  const query = GetPracticeStatisticsQueryParams.safeParse(
+    normalizeDateRangeQuery(req.query),
+  );
   if (!query.success) {
     res.status(400).json({ error: query.error.message });
     return;
