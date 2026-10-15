@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, lt, or, sql } from "drizzle-orm";
 import {
   db,
   practiceSessionsTable,
@@ -31,6 +31,9 @@ export function toSession(row: SessionWithPiece) {
     id: row.session.id,
     status: row.session.status as "running" | "paused" | "completed",
     startedAt: row.session.startedAt.toISOString(),
+    practiceDate:
+      row.session.practiceDate ??
+      row.session.startedAt.toISOString().slice(0, 10),
     finishedAt: row.session.finishedAt?.toISOString() ?? null,
     elapsedSeconds: row.session.elapsedSeconds + currentElapsed,
     activeSince: row.session.activeSince?.toISOString() ?? null,
@@ -47,6 +50,8 @@ export function toSession(row: SessionWithPiece) {
       | "other",
     notes: row.session.notes,
     goal: row.session.goal,
+    source: row.session.source as "timer" | "manual",
+    focusAreas: row.session.focusAreas,
     createdAt: row.session.createdAt.toISOString(),
   };
 }
@@ -102,18 +107,36 @@ export async function getSessionRows(options?: {
   if (!options?.includeActive) {
     conditions.push(eq(practiceSessionsTable.status, "completed"));
   }
-  if (options?.from) {
+  if (options?.from || options?.to) {
+    const explicitDateConditions = [];
+    const legacyTimestampConditions = [isNull(practiceSessionsTable.practiceDate)];
+    if (options.from) {
+      explicitDateConditions.push(
+        gte(practiceSessionsTable.practiceDate, options.from),
+      );
+      legacyTimestampConditions.push(
+        gte(
+          practiceSessionsTable.startedAt,
+          new Date(`${options.from}T00:00:00.000Z`),
+        ),
+      );
+    }
+    if (options.to) {
+      explicitDateConditions.push(
+        lte(practiceSessionsTable.practiceDate, options.to),
+      );
+      const exclusiveEnd = new Date(`${options.to}T00:00:00.000Z`);
+      exclusiveEnd.setUTCDate(exclusiveEnd.getUTCDate() + 1);
+      legacyTimestampConditions.push(
+        lt(practiceSessionsTable.startedAt, exclusiveEnd),
+      );
+    }
     conditions.push(
-      gte(
-        practiceSessionsTable.startedAt,
-        new Date(`${options.from}T00:00:00.000Z`),
+      or(
+        and(...explicitDateConditions),
+        and(...legacyTimestampConditions),
       ),
     );
-  }
-  if (options?.to) {
-    const exclusiveEnd = new Date(`${options.to}T00:00:00.000Z`);
-    exclusiveEnd.setUTCDate(exclusiveEnd.getUTCDate() + 1);
-    conditions.push(lt(practiceSessionsTable.startedAt, exclusiveEnd));
   }
   if (options?.pieceId !== undefined) {
     conditions.push(eq(practiceSessionsTable.pieceId, options.pieceId));
@@ -200,5 +223,8 @@ export function addDays(dateString: string, days: number) {
 }
 
 export function dateOfSession(row: SessionWithPiece) {
-  return row.session.startedAt.toISOString().slice(0, 10);
+  return (
+    row.session.practiceDate ??
+    row.session.startedAt.toISOString().slice(0, 10)
+  );
 }

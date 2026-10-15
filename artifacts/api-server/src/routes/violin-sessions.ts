@@ -6,6 +6,8 @@ import {
   repertoireTable,
 } from "@workspace/db";
 import {
+  CreateManualPracticeSessionBody,
+  CreateManualPracticeSessionResponse,
   DeletePracticeSessionParams,
   FinishPracticeSessionBody,
   FinishPracticeSessionParams,
@@ -102,6 +104,9 @@ router.post("/violin/sessions", async (req, res): Promise<void> => {
     .values({
       status: "running",
       startedAt: now,
+      practiceDate: parsed.data.practiceDate
+        ? asDateString(parsed.data.practiceDate)
+        : asDateString(now),
       activeSince: now,
       pieceId: parsed.data.pieceId ?? null,
       category: parsed.data.category,
@@ -111,6 +116,54 @@ router.post("/violin/sessions", async (req, res): Promise<void> => {
   const session = await getSessionWithPiece(created.id);
 
   res.status(201).json(StartPracticeSessionResponse.parse(toSession(session!)));
+});
+
+router.post("/violin/sessions/manual", async (req, res): Promise<void> => {
+  const parsed = CreateManualPracticeSessionBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  if (parsed.data.pieceId != null) {
+    const [piece] = await db
+      .select({ id: repertoireTable.id })
+      .from(repertoireTable)
+      .where(eq(repertoireTable.id, parsed.data.pieceId))
+      .limit(1);
+    if (!piece) {
+      res.status(400).json({ error: "The selected repertoire piece does not exist." });
+      return;
+    }
+  }
+
+  const practiceDate = asDateString(parsed.data.practiceDate);
+  const startedAt = new Date(`${practiceDate}T12:00:00.000Z`);
+  const elapsedSeconds = parsed.data.elapsedSeconds;
+  const [created] = await db
+    .insert(practiceSessionsTable)
+    .values({
+      status: "completed",
+      startedAt,
+      practiceDate,
+      finishedAt: new Date(startedAt.getTime() + elapsedSeconds * 1000),
+      elapsedSeconds,
+      activeSince: null,
+      pieceId: parsed.data.pieceId ?? null,
+      category: parsed.data.category,
+      goal: parsed.data.goal?.trim() ?? "",
+      notes: parsed.data.notes?.trim() ?? "",
+      source: "manual",
+      focusAreas: (parsed.data.focusAreas ?? [])
+        .map((focusArea) => focusArea.trim())
+        .filter(Boolean),
+    })
+    .returning({ id: practiceSessionsTable.id });
+
+  const session = await getSessionWithPiece(created.id);
+  res
+    .status(201)
+    .json(CreateManualPracticeSessionResponse.parse(toSession(session!)));
 });
 
 router.patch("/violin/sessions/:id", async (req, res): Promise<void> => {
@@ -144,17 +197,48 @@ router.patch("/violin/sessions/:id", async (req, res): Promise<void> => {
       return;
     }
   }
+  if (
+    current.session.source === "manual" &&
+    parsed.data.elapsedSeconds !== undefined &&
+    (parsed.data.elapsedSeconds < 60 || parsed.data.elapsedSeconds > 86400)
+  ) {
+    res.status(400).json({
+      error: "A manually logged session must be between 1 minute and 24 hours.",
+    });
+    return;
+  }
 
   const values: Partial<typeof practiceSessionsTable.$inferInsert> = {};
   if ("pieceId" in parsed.data) values.pieceId = parsed.data.pieceId ?? null;
   if (parsed.data.category !== undefined) values.category = parsed.data.category;
   if (parsed.data.notes !== undefined) values.notes = parsed.data.notes;
   if (parsed.data.goal !== undefined) values.goal = parsed.data.goal;
+  if (parsed.data.focusAreas !== undefined) {
+    values.focusAreas = parsed.data.focusAreas
+      .map((focusArea) => focusArea.trim())
+      .filter(Boolean);
+  }
+  if (parsed.data.practiceDate !== undefined) {
+    values.practiceDate = asDateString(parsed.data.practiceDate);
+  }
   if (parsed.data.startedAt !== undefined) {
     values.startedAt = new Date(parsed.data.startedAt);
   }
   if (parsed.data.elapsedSeconds !== undefined) {
     values.elapsedSeconds = parsed.data.elapsedSeconds;
+  }
+  if (current.session.source === "manual") {
+    const practiceDate =
+      values.practiceDate ??
+      current.session.practiceDate ??
+      current.session.startedAt.toISOString().slice(0, 10);
+    const startedAt = new Date(`${practiceDate}T12:00:00.000Z`);
+    const elapsedSeconds =
+      values.elapsedSeconds ?? current.session.elapsedSeconds;
+    values.practiceDate = practiceDate;
+    values.startedAt = startedAt;
+    values.finishedAt = new Date(startedAt.getTime() + elapsedSeconds * 1000);
+    values.activeSince = null;
   }
 
   await db

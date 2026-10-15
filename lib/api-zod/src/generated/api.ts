@@ -20,6 +20,10 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary Get the current practice dashboard
  */
+export const GetViolinDashboardQueryParams = zod.object({
+  "asOf": zod.date().optional().describe('The current calendar date in the user\'s local time zone.')
+})
+
 export const getViolinDashboardResponseRepertoireItemDifficultyMax = 5;
 
 export const getViolinDashboardResponseRepertoireItemProgressMin = 0;
@@ -41,6 +45,7 @@ export const GetViolinDashboardResponse = zod.object({
   "id": zod.number().int(),
   "status": zod.enum(['running', 'paused', 'completed']),
   "startedAt": zod.coerce.date(),
+  "practiceDate": zod.coerce.date(),
   "finishedAt": zod.coerce.date().nullable(),
   "elapsedSeconds": zod.number().int(),
   "activeSince": zod.coerce.date().nullable(),
@@ -49,6 +54,8 @@ export const GetViolinDashboardResponse = zod.object({
   "category": zod.enum(['technique', 'scales', 'intonation', 'bowing', 'sight-reading', 'repertoire', 'memorisation', 'other']),
   "notes": zod.string(),
   "goal": zod.string(),
+  "source": zod.enum(['timer', 'manual']),
+  "focusAreas": zod.array(zod.string()),
   "createdAt": zod.coerce.date()
 })),
   "repertoire": zod.array(zod.object({
@@ -106,6 +113,7 @@ export const GetPracticeSessionsResponseItem = zod.object({
   "id": zod.number().int(),
   "status": zod.enum(['running', 'paused', 'completed']),
   "startedAt": zod.coerce.date(),
+  "practiceDate": zod.coerce.date(),
   "finishedAt": zod.coerce.date().nullable(),
   "elapsedSeconds": zod.number().int(),
   "activeSince": zod.coerce.date().nullable(),
@@ -114,6 +122,8 @@ export const GetPracticeSessionsResponseItem = zod.object({
   "category": zod.enum(['technique', 'scales', 'intonation', 'bowing', 'sight-reading', 'repertoire', 'memorisation', 'other']),
   "notes": zod.string(),
   "goal": zod.string(),
+  "source": zod.enum(['timer', 'manual']),
+  "focusAreas": zod.array(zod.string()),
   "createdAt": zod.coerce.date()
 })
 export const GetPracticeSessionsResponse = zod.array(GetPracticeSessionsResponseItem)
@@ -127,6 +137,7 @@ export const startPracticeSessionBodyGoalMax = 2000;
 
 
 export const StartPracticeSessionBody = zod.object({
+  "practiceDate": zod.coerce.date().optional(),
   "pieceId": zod.number().int().nullish(),
   "category": zod.enum(['technique', 'scales', 'intonation', 'bowing', 'sight-reading', 'repertoire', 'memorisation', 'other']),
   "goal": zod.string().max(startPracticeSessionBodyGoalMax).optional()
@@ -136,6 +147,7 @@ export const StartPracticeSessionResponse = zod.object({
   "id": zod.number().int(),
   "status": zod.enum(['running', 'paused', 'completed']),
   "startedAt": zod.coerce.date(),
+  "practiceDate": zod.coerce.date(),
   "finishedAt": zod.coerce.date().nullable(),
   "elapsedSeconds": zod.number().int(),
   "activeSince": zod.coerce.date().nullable(),
@@ -144,6 +156,53 @@ export const StartPracticeSessionResponse = zod.object({
   "category": zod.enum(['technique', 'scales', 'intonation', 'bowing', 'sight-reading', 'repertoire', 'memorisation', 'other']),
   "notes": zod.string(),
   "goal": zod.string(),
+  "source": zod.enum(['timer', 'manual']),
+  "focusAreas": zod.array(zod.string()),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Record a completed practice session without the timer
+ */
+export const createManualPracticeSessionBodyElapsedSecondsMin = 60;
+export const createManualPracticeSessionBodyElapsedSecondsMax = 86400;
+
+export const createManualPracticeSessionBodyGoalMax = 2000;
+
+export const createManualPracticeSessionBodyNotesMax = 5000;
+
+export const createManualPracticeSessionBodyFocusAreasItemMax = 120;
+
+export const createManualPracticeSessionBodyFocusAreasMax = 20;
+
+
+
+export const CreateManualPracticeSessionBody = zod.object({
+  "practiceDate": zod.coerce.date(),
+  "elapsedSeconds": zod.number().int().min(createManualPracticeSessionBodyElapsedSecondsMin).max(createManualPracticeSessionBodyElapsedSecondsMax),
+  "pieceId": zod.number().int().nullish(),
+  "category": zod.enum(['technique', 'scales', 'intonation', 'bowing', 'sight-reading', 'repertoire', 'memorisation', 'other']),
+  "goal": zod.string().max(createManualPracticeSessionBodyGoalMax).optional(),
+  "notes": zod.string().max(createManualPracticeSessionBodyNotesMax).optional(),
+  "focusAreas": zod.array(zod.string().max(createManualPracticeSessionBodyFocusAreasItemMax)).max(createManualPracticeSessionBodyFocusAreasMax).optional()
+})
+
+export const CreateManualPracticeSessionResponse = zod.object({
+  "id": zod.number().int(),
+  "status": zod.enum(['running', 'paused', 'completed']),
+  "startedAt": zod.coerce.date(),
+  "practiceDate": zod.coerce.date(),
+  "finishedAt": zod.coerce.date().nullable(),
+  "elapsedSeconds": zod.number().int(),
+  "activeSince": zod.coerce.date().nullable(),
+  "pieceId": zod.number().int().nullable(),
+  "pieceTitle": zod.string().nullable(),
+  "category": zod.enum(['technique', 'scales', 'intonation', 'bowing', 'sight-reading', 'repertoire', 'memorisation', 'other']),
+  "notes": zod.string(),
+  "goal": zod.string(),
+  "source": zod.enum(['timer', 'manual']),
+  "focusAreas": zod.array(zod.string()),
   "createdAt": zod.coerce.date()
 })
 
@@ -156,6 +215,7 @@ export const GetActivePracticeSessionResponse = zod.object({
   "id": zod.number().int(),
   "status": zod.enum(['running', 'paused', 'completed']),
   "startedAt": zod.coerce.date(),
+  "practiceDate": zod.coerce.date(),
   "finishedAt": zod.coerce.date().nullable(),
   "elapsedSeconds": zod.number().int(),
   "activeSince": zod.coerce.date().nullable(),
@@ -164,6 +224,8 @@ export const GetActivePracticeSessionResponse = zod.object({
   "category": zod.enum(['technique', 'scales', 'intonation', 'bowing', 'sight-reading', 'repertoire', 'memorisation', 'other']),
   "notes": zod.string(),
   "goal": zod.string(),
+  "source": zod.enum(['timer', 'manual']),
+  "focusAreas": zod.array(zod.string()),
   "createdAt": zod.coerce.date()
 }),zod.null()])
 })
@@ -180,15 +242,21 @@ export const updatePracticeSessionBodyNotesMax = 5000;
 
 export const updatePracticeSessionBodyGoalMax = 2000;
 
+export const updatePracticeSessionBodyFocusAreasItemMax = 120;
+
+export const updatePracticeSessionBodyFocusAreasMax = 20;
+
 export const updatePracticeSessionBodyElapsedSecondsMin = 0;
 
 
 
 export const UpdatePracticeSessionBody = zod.object({
+  "practiceDate": zod.coerce.date().optional(),
   "pieceId": zod.number().int().nullish(),
   "category": zod.enum(['technique', 'scales', 'intonation', 'bowing', 'sight-reading', 'repertoire', 'memorisation', 'other']).optional(),
   "notes": zod.string().max(updatePracticeSessionBodyNotesMax).optional(),
   "goal": zod.string().max(updatePracticeSessionBodyGoalMax).optional(),
+  "focusAreas": zod.array(zod.string().max(updatePracticeSessionBodyFocusAreasItemMax)).max(updatePracticeSessionBodyFocusAreasMax).optional(),
   "startedAt": zod.coerce.date().optional(),
   "elapsedSeconds": zod.number().int().min(updatePracticeSessionBodyElapsedSecondsMin).optional()
 })
@@ -197,6 +265,7 @@ export const UpdatePracticeSessionResponse = zod.object({
   "id": zod.number().int(),
   "status": zod.enum(['running', 'paused', 'completed']),
   "startedAt": zod.coerce.date(),
+  "practiceDate": zod.coerce.date(),
   "finishedAt": zod.coerce.date().nullable(),
   "elapsedSeconds": zod.number().int(),
   "activeSince": zod.coerce.date().nullable(),
@@ -205,6 +274,8 @@ export const UpdatePracticeSessionResponse = zod.object({
   "category": zod.enum(['technique', 'scales', 'intonation', 'bowing', 'sight-reading', 'repertoire', 'memorisation', 'other']),
   "notes": zod.string(),
   "goal": zod.string(),
+  "source": zod.enum(['timer', 'manual']),
+  "focusAreas": zod.array(zod.string()),
   "createdAt": zod.coerce.date()
 })
 
@@ -230,6 +301,7 @@ export const PausePracticeSessionResponse = zod.object({
   "id": zod.number().int(),
   "status": zod.enum(['running', 'paused', 'completed']),
   "startedAt": zod.coerce.date(),
+  "practiceDate": zod.coerce.date(),
   "finishedAt": zod.coerce.date().nullable(),
   "elapsedSeconds": zod.number().int(),
   "activeSince": zod.coerce.date().nullable(),
@@ -238,6 +310,8 @@ export const PausePracticeSessionResponse = zod.object({
   "category": zod.enum(['technique', 'scales', 'intonation', 'bowing', 'sight-reading', 'repertoire', 'memorisation', 'other']),
   "notes": zod.string(),
   "goal": zod.string(),
+  "source": zod.enum(['timer', 'manual']),
+  "focusAreas": zod.array(zod.string()),
   "createdAt": zod.coerce.date()
 })
 
@@ -253,6 +327,7 @@ export const ResumePracticeSessionResponse = zod.object({
   "id": zod.number().int(),
   "status": zod.enum(['running', 'paused', 'completed']),
   "startedAt": zod.coerce.date(),
+  "practiceDate": zod.coerce.date(),
   "finishedAt": zod.coerce.date().nullable(),
   "elapsedSeconds": zod.number().int(),
   "activeSince": zod.coerce.date().nullable(),
@@ -261,6 +336,8 @@ export const ResumePracticeSessionResponse = zod.object({
   "category": zod.enum(['technique', 'scales', 'intonation', 'bowing', 'sight-reading', 'repertoire', 'memorisation', 'other']),
   "notes": zod.string(),
   "goal": zod.string(),
+  "source": zod.enum(['timer', 'manual']),
+  "focusAreas": zod.array(zod.string()),
   "createdAt": zod.coerce.date()
 })
 
@@ -284,6 +361,7 @@ export const FinishPracticeSessionResponse = zod.object({
   "id": zod.number().int(),
   "status": zod.enum(['running', 'paused', 'completed']),
   "startedAt": zod.coerce.date(),
+  "practiceDate": zod.coerce.date(),
   "finishedAt": zod.coerce.date().nullable(),
   "elapsedSeconds": zod.number().int(),
   "activeSince": zod.coerce.date().nullable(),
@@ -292,6 +370,8 @@ export const FinishPracticeSessionResponse = zod.object({
   "category": zod.enum(['technique', 'scales', 'intonation', 'bowing', 'sight-reading', 'repertoire', 'memorisation', 'other']),
   "notes": zod.string(),
   "goal": zod.string(),
+  "source": zod.enum(['timer', 'manual']),
+  "focusAreas": zod.array(zod.string()),
   "createdAt": zod.coerce.date()
 })
 
@@ -505,6 +585,10 @@ export const DeleteRepertoirePieceResponse = zod.void()
 /**
  * @summary List practice goals and their current progress
  */
+export const GetPracticeGoalsQueryParams = zod.object({
+  "asOf": zod.date().optional().describe('The current calendar date in the user\'s local time zone.')
+})
+
 
 
 

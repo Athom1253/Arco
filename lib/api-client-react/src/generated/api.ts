@@ -25,11 +25,13 @@ import type {
   Dashboard,
   FinishPracticeSessionInput,
   GetPracticeCalendarParams,
+  GetPracticeGoalsParams,
   GetPracticePlanSummaryParams,
   GetPracticePlansParams,
   GetPracticeSessionsParams,
   GetPracticeStatisticsParams,
   GetRepertoireParams,
+  GetViolinDashboardParams,
   HealthStatus,
   PracticeAchievement,
   PracticeGoal,
@@ -41,6 +43,7 @@ import type {
   PracticePlanUpdate,
   PracticeSession,
   PracticeSessionInput,
+  PracticeSessionManualInput,
   PracticeSessionUpdate,
   PracticeStatistics,
   RepertoirePiece,
@@ -153,20 +156,27 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
-export const getGetViolinDashboardUrl = () => {
+export const getGetViolinDashboardUrl = (params?: GetViolinDashboardParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/violin/dashboard`
+  return stringifiedParams.length > 0 ? `/api/violin/dashboard?${stringifiedParams}` : `/api/violin/dashboard`
 }
 
 /**
  * @summary Get the current practice dashboard
  */
-export const getViolinDashboard = async ( options?: Parameters<typeof customFetch>[1]): Promise<Dashboard> => {
+export const getViolinDashboard = async (params?: GetViolinDashboardParams, options?: Parameters<typeof customFetch>[1]): Promise<Dashboard> => {
 
-  return customFetch<Dashboard>(getGetViolinDashboardUrl(),
+  return customFetch<Dashboard>(getGetViolinDashboardUrl(params),
   {
     ...options,
     method: 'GET'
@@ -179,23 +189,23 @@ export const getViolinDashboard = async ( options?: Parameters<typeof customFetc
 
 
 
-export const getGetViolinDashboardQueryKey = () => {
+export const getGetViolinDashboardQueryKey = (params?: GetViolinDashboardParams,) => {
     return [
-    `/api/violin/dashboard`
+    `/api/violin/dashboard`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetViolinDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getViolinDashboard>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getViolinDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetViolinDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getViolinDashboard>>, TError = ErrorType<unknown>>(params?: GetViolinDashboardParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getViolinDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetViolinDashboardQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetViolinDashboardQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getViolinDashboard>>> = ({ signal }) => getViolinDashboard({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getViolinDashboard>>> = ({ signal }) => getViolinDashboard(params, { signal, ...requestOptions });
 
 
 
@@ -213,11 +223,11 @@ export type GetViolinDashboardQueryError = ErrorType<unknown>
  */
 
 export function useGetViolinDashboard<TData = Awaited<ReturnType<typeof getViolinDashboard>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getViolinDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetViolinDashboardParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getViolinDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetViolinDashboardQueryOptions(options)
+  const queryOptions = getGetViolinDashboardQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -400,6 +410,94 @@ export const useStartPracticeSession = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getStartPracticeSessionMutationOptions(options));
+    }
+
+export const getCreateManualPracticeSessionUrl = () => {
+
+
+
+
+  return `/api/violin/sessions/manual`
+}
+
+/**
+ * @summary Record a completed practice session without the timer
+ */
+export const createManualPracticeSession = async (practiceSessionManualInput: PracticeSessionManualInput, options?: Parameters<typeof customFetch>[1]): Promise<PracticeSession> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PracticeSession>(getCreateManualPracticeSessionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(practiceSessionManualInput)
+  }
+);}
+
+
+
+
+
+export const getCreateManualPracticeSessionMutationKey = () => ['createManualPracticeSession'] as const;
+
+export const getCreateManualPracticeSessionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createManualPracticeSession>>, TError,CreateManualPracticeSessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createManualPracticeSession>>, TError,CreateManualPracticeSessionMutationVariables, TContext> => {
+
+const mutationKey = getCreateManualPracticeSessionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createManualPracticeSession>>, CreateManualPracticeSessionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createManualPracticeSession(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateManualPracticeSessionMutationResult = NonNullable<Awaited<ReturnType<typeof createManualPracticeSession>>>
+    export type CreateManualPracticeSessionMutationBody = BodyType<PracticeSessionManualInput>
+    export type CreateManualPracticeSessionMutationError = ErrorType<unknown>
+    export type CreateManualPracticeSessionMutationVariables = {data: BodyType<PracticeSessionManualInput>}
+
+    /**
+ * @summary Record a completed practice session without the timer
+ */
+export const useCreateManualPracticeSession = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createManualPracticeSession>>, TError,CreateManualPracticeSessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createManualPracticeSession>>,
+        TError,
+        CreateManualPracticeSessionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateManualPracticeSessionMutationOptions(options));
     }
 
 export const getGetActivePracticeSessionUrl = () => {
@@ -1382,20 +1480,27 @@ export const useDeleteRepertoirePiece = <TError = ErrorType<void>,
       return useMutation(getDeleteRepertoirePieceMutationOptions(options));
     }
 
-export const getGetPracticeGoalsUrl = () => {
+export const getGetPracticeGoalsUrl = (params?: GetPracticeGoalsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/violin/goals`
+  return stringifiedParams.length > 0 ? `/api/violin/goals?${stringifiedParams}` : `/api/violin/goals`
 }
 
 /**
  * @summary List practice goals and their current progress
  */
-export const getPracticeGoals = async ( options?: Parameters<typeof customFetch>[1]): Promise<PracticeGoal[]> => {
+export const getPracticeGoals = async (params?: GetPracticeGoalsParams, options?: Parameters<typeof customFetch>[1]): Promise<PracticeGoal[]> => {
 
-  return customFetch<PracticeGoal[]>(getGetPracticeGoalsUrl(),
+  return customFetch<PracticeGoal[]>(getGetPracticeGoalsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1408,23 +1513,23 @@ export const getPracticeGoals = async ( options?: Parameters<typeof customFetch>
 
 
 
-export const getGetPracticeGoalsQueryKey = () => {
+export const getGetPracticeGoalsQueryKey = (params?: GetPracticeGoalsParams,) => {
     return [
-    `/api/violin/goals`
+    `/api/violin/goals`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetPracticeGoalsQueryOptions = <TData = Awaited<ReturnType<typeof getPracticeGoals>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPracticeGoals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetPracticeGoalsQueryOptions = <TData = Awaited<ReturnType<typeof getPracticeGoals>>, TError = ErrorType<unknown>>(params?: GetPracticeGoalsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPracticeGoals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetPracticeGoalsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetPracticeGoalsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPracticeGoals>>> = ({ signal }) => getPracticeGoals({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPracticeGoals>>> = ({ signal }) => getPracticeGoals(params, { signal, ...requestOptions });
 
 
 
@@ -1442,11 +1547,11 @@ export type GetPracticeGoalsQueryError = ErrorType<unknown>
  */
 
 export function useGetPracticeGoals<TData = Awaited<ReturnType<typeof getPracticeGoals>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPracticeGoals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetPracticeGoalsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPracticeGoals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetPracticeGoalsQueryOptions(options)
+  const queryOptions = getGetPracticeGoalsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -8,6 +8,7 @@
 import type { PracticeCategory } from './practiceCategory';
 
 export interface PracticeSessionInput {
+  practiceDate?: Date;
   /** @nullable */
   pieceId?: number | null;
   category: PracticeCategory;

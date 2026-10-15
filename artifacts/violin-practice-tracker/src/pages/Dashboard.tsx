@@ -2,11 +2,11 @@ import { ArrowRight, CalendarDays, Flame, Music2, Target, Timer, Trophy } from '
 import { Link } from 'wouter';
 import { useGetViolinDashboard } from '@workspace/api-client-react';
 import { Card, EmptyState, PageHeading, QueryState } from '@/components/Primitives';
-import { formatDuration, prettyDate } from '@/lib/utils';
+import { dateKey, formatDuration, prettyDate } from '@/lib/utils';
 import type { CSSProperties } from 'react';
 
 export default function Dashboard() {
-  const query = useGetViolinDashboard();
+  const query = useGetViolinDashboard({ asOf: dateKey(new Date()) });
   const dashboard = query.data;
   const retry = () => query.refetch();
 

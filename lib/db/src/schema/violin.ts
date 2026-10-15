@@ -28,6 +28,7 @@ export const practiceSessionsTable = pgTable("violin_practice_sessions", {
   id: serial("id").primaryKey(),
   status: text("status").notNull().default("running"),
   startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+  practiceDate: date("practice_date", { mode: "string" }),
   finishedAt: timestamp("finished_at", { withTimezone: true }),
   elapsedSeconds: integer("elapsed_seconds").notNull().default(0),
   activeSince: timestamp("active_since", { withTimezone: true }),
@@ -37,6 +38,8 @@ export const practiceSessionsTable = pgTable("violin_practice_sessions", {
   category: text("category").notNull(),
   notes: text("notes").notNull().default(""),
   goal: text("goal").notNull().default(""),
+  source: text("source").notNull().default("timer"),
+  focusAreas: text("focus_areas").array().notNull().default([]),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

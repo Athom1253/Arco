@@ -4,7 +4,7 @@ import { Check, Pencil, Plus, Target, Trash2, Trophy } from 'lucide-react';
 import { getGetPracticeAchievementsQueryKey, getGetPracticeGoalsQueryKey, getGetViolinDashboardQueryKey, getGetRepertoireQueryKey, useCreatePracticeGoal, useDeletePracticeGoal, useGetPracticeAchievements, useGetPracticeGoals, useGetRepertoire, useUpdatePracticeGoal } from '@workspace/api-client-react';
 import type { PracticeGoal, GoalType } from '@workspace/api-client-react';
 import { Button, Card, EmptyState, Field, Modal, PageHeading, QueryState, SubmitButton } from '@/components/Primitives';
-import { titleCase } from '@/lib/utils';
+import { dateKey, titleCase } from '@/lib/utils';
 
 const types: GoalType[] = ['daily-minutes', 'weekly-minutes', 'piece-minutes', 'session-count'];
 
@@ -18,7 +18,7 @@ export default function Goals() {
   const maxTarget = type === 'daily-minutes' ? 120 : type === 'weekly-minutes' ? 600 : type === 'session-count' ? 6 : 10000;
   const targetValue = Number(target);
   const invalidTarget = !Number.isInteger(targetValue) || targetValue < 1 || targetValue > maxTarget || (type === 'piece-minutes' && !pieceId);
-  const goalsQuery = useGetPracticeGoals();
+  const goalsQuery = useGetPracticeGoals({ asOf: dateKey(new Date()) });
   const achievementsQuery = useGetPracticeAchievements();
   const repertoireQuery = useGetRepertoire();
   const create = useCreatePracticeGoal();

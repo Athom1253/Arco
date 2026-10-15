@@ -52,10 +52,19 @@ export const GoalType = {
   'session-count': 'session-count',
 } as const;
 
+export type PracticeSessionSource = typeof PracticeSessionSource[keyof typeof PracticeSessionSource];
+
+
+export const PracticeSessionSource = {
+  timer: 'timer',
+  manual: 'manual',
+} as const;
+
 export interface PracticeSession {
   id: number;
   status: PracticeStatus;
   startedAt: string;
+  practiceDate: string;
   /** @nullable */
   finishedAt: string | null;
   elapsedSeconds: number;
@@ -68,10 +77,13 @@ export interface PracticeSession {
   category: PracticeCategory;
   notes: string;
   goal: string;
+  source: PracticeSessionSource;
+  focusAreas: string[];
   createdAt: string;
 }
 
 export interface PracticeSessionInput {
+  practiceDate?: string;
   /** @nullable */
   pieceId?: number | null;
   category: PracticeCategory;
@@ -79,7 +91,29 @@ export interface PracticeSessionInput {
   goal?: string;
 }
 
+export interface PracticeSessionManualInput {
+  practiceDate: string;
+  /**
+     * @minimum 60
+     * @maximum 86400
+     */
+  elapsedSeconds: number;
+  /** @nullable */
+  pieceId?: number | null;
+  category: PracticeCategory;
+  /** @maxLength 2000 */
+  goal?: string;
+  /** @maxLength 5000 */
+  notes?: string;
+  /**
+     * @maxItems 20
+     * @items.maxLength 120
+     */
+  focusAreas?: string[];
+}
+
 export interface PracticeSessionUpdate {
+  practiceDate?: string;
   /** @nullable */
   pieceId?: number | null;
   category?: PracticeCategory;
@@ -87,6 +121,11 @@ export interface PracticeSessionUpdate {
   notes?: string;
   /** @maxLength 2000 */
   goal?: string;
+  /**
+     * @maxItems 20
+     * @items.maxLength 120
+     */
+  focusAreas?: string[];
   startedAt?: string;
   /** @minimum 0 */
   elapsedSeconds?: number;
@@ -334,6 +373,13 @@ export interface CalendarDay {
   sessionCount: number;
 }
 
+export type GetViolinDashboardParams = {
+/**
+ * The current calendar date in the user's local time zone.
+ */
+asOf?: string;
+};
+
 export type GetPracticeSessionsParams = {
 from?: string;
 to?: string;
@@ -355,6 +401,13 @@ month: string;
 
 export type GetRepertoireParams = {
 includeArchived?: boolean;
+};
+
+export type GetPracticeGoalsParams = {
+/**
+ * The current calendar date in the user's local time zone.
+ */
+asOf?: string;
 };
 
 export type GetPracticePlansParams = {

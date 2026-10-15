@@ -36,6 +36,11 @@ paths:
       operationId: getViolinDashboard
       tags: [practice]
       summary: Get the current practice dashboard
+      parameters:
+        - name: asOf
+          in: query
+          description: The current calendar date in the user's local time zone.
+          schema: { type: string, format: date }
       responses:
         "200":
           description: Current dashboard metrics calculated from saved records
@@ -81,6 +86,22 @@ paths:
       responses:
         "201":
           description: Started session
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PracticeSession" }
+  /violin/sessions/manual:
+    post:
+      operationId: createManualPracticeSession
+      tags: [practice]
+      summary: Record a completed practice session without the timer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PracticeSessionManualInput" }
+      responses:
+        "201":
+          description: Saved manual practice session
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PracticeSession" }
@@ -282,6 +303,11 @@ paths:
       operationId: getPracticeGoals
       tags: [goals]
       summary: List practice goals and their current progress
+      parameters:
+        - name: asOf
+          in: query
+          description: The current calendar date in the user's local time zone.
+          schema: { type: string, format: date }
       responses:
         "200":
           description: Goals with current progress calculated from saved sessions
@@ -456,11 +482,12 @@ components:
       enum: [daily-minutes, weekly-minutes, piece-minutes, session-count]
     PracticeSession:
       type: object
-      required: [id, status, startedAt, finishedAt, elapsedSeconds, activeSince, pieceId, pieceTitle, category, notes, goal, createdAt]
+      required: [id, status, startedAt, practiceDate, finishedAt, elapsedSeconds, activeSince, pieceId, pieceTitle, category, notes, goal, source, focusAreas, createdAt]
       properties:
         id: { type: integer }
         status: { $ref: "#/components/schemas/PracticeStatus" }
         startedAt: { type: string, format: date-time }
+        practiceDate: { type: string, format: date }
         finishedAt: { type: ["string", "null"], format: date-time }
         elapsedSeconds: { type: integer }
         activeSince: { type: ["string", "null"], format: date-time }
@@ -469,21 +496,45 @@ components:
         category: { $ref: "#/components/schemas/PracticeCategory" }
         notes: { type: string }
         goal: { type: string }
+        source: { type: string, enum: [timer, manual] }
+        focusAreas:
+          type: array
+          items: { type: string }
         createdAt: { type: string, format: date-time }
     PracticeSessionInput:
       type: object
       required: [category]
       properties:
+        practiceDate: { type: string, format: date }
         pieceId: { type: ["integer", "null"] }
         category: { $ref: "#/components/schemas/PracticeCategory" }
         goal: { type: string, maxLength: 2000 }
+    PracticeSessionManualInput:
+      type: object
+      required: [practiceDate, elapsedSeconds, category]
+      properties:
+        practiceDate: { type: string, format: date }
+        elapsedSeconds: { type: integer, minimum: 60, maximum: 86400 }
+        pieceId: { type: ["integer", "null"] }
+        category: { $ref: "#/components/schemas/PracticeCategory" }
+        goal: { type: string, maxLength: 2000 }
+        notes: { type: string, maxLength: 5000 }
+        focusAreas:
+          type: array
+          maxItems: 20
+          items: { type: string, maxLength: 120 }
     PracticeSessionUpdate:
       type: object
       properties:
+        practiceDate: { type: string, format: date }
         pieceId: { type: ["integer", "null"] }
         category: { $ref: "#/components/schemas/PracticeCategory" }
         notes: { type: string, maxLength: 5000 }
         goal: { type: string, maxLength: 2000 }
+        focusAreas:
+          type: array
+          maxItems: 20
+          items: { type: string, maxLength: 120 }
         startedAt: { type: string, format: date-time }
         elapsedSeconds: { type: integer, minimum: 0 }
     FinishPracticeSessionInput:

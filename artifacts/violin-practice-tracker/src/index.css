@@ -4192,3 +4192,263 @@ a {
     grid-column: auto;
   }
 }
+
+.analytics-toolbar {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 11px;
+  margin: 17px 0 8px;
+}
+
+.analytics-toolbar > .field {
+  width: 155px;
+  margin: 0;
+}
+
+.analytics-toolbar > .field input,
+.selected-day-controls > .field input {
+  min-height: 36px;
+}
+
+.trend-period-control {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.trend-period-control legend {
+  margin-bottom: 6px;
+  color: #898b80;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.trend-period-control button,
+.duration-mode button {
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid #e6e4d8;
+  border-radius: 9px;
+  color: #697566;
+  background: #fbfaf6;
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  transition: color .16s, background .16s, border-color .16s;
+}
+
+.trend-period-control button:hover,
+.duration-mode button:hover {
+  border-color: #aebca8;
+  color: #315847;
+}
+
+.trend-period-control button.is-active,
+.duration-mode button.is-active {
+  border-color: #315847;
+  color: #fff;
+  background: #315847;
+}
+
+.trend-period-control button:focus-visible,
+.duration-mode button:focus-visible,
+.calendar-day:focus-visible {
+  outline: 2px solid #b89150;
+  outline-offset: 2px;
+}
+
+.trend-chart-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.trend-chart-scroll .trend-chart {
+  width: max-content;
+  min-width: 100%;
+}
+
+.trend-chart-scroll .trend-column {
+  min-width: 28px;
+}
+
+.calendar-cell {
+  min-width: 0;
+}
+
+.calendar-day {
+  width: 100%;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+  transition: box-shadow .16s, background .16s, color .16s;
+}
+
+.calendar-day:hover {
+  border-color: #d9dfd1;
+  background: #f3f5ef;
+}
+
+.calendar-day.is-selected {
+  box-shadow: inset 0 0 0 2px #b89150;
+}
+
+.selected-day-card {
+  margin-bottom: 17px;
+  padding: 21px 23px;
+}
+
+.selected-day-total {
+  display: grid;
+  gap: 4px;
+  text-align: right;
+}
+
+.selected-day-total span {
+  color: #898d82;
+  font-size: 10px;
+}
+
+.selected-day-total strong {
+  color: #30483a;
+  font-family: var(--app-font-serif);
+  font-size: 23px;
+  font-weight: 500;
+}
+
+.selected-day-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 11px;
+  margin: 14px 0 4px;
+}
+
+.selected-day-controls > .field {
+  width: 190px;
+  margin: 0;
+}
+
+.selected-day-controls > .button {
+  min-height: 36px;
+}
+
+.log-focus-areas {
+  color: #657960 !important;
+  font-size: 10px;
+}
+
+.manual-log-form {
+  display: grid;
+  gap: 13px;
+}
+
+.manual-log-form .field {
+  min-width: 0;
+  margin: 0;
+}
+
+.manual-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.manual-duration-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 3px;
+}
+
+.manual-duration-heading > strong {
+  color: #526452;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.duration-mode {
+  display: flex;
+  gap: 4px;
+}
+
+.duration-mode button {
+  min-height: 30px;
+  padding: 0 9px;
+}
+
+.manual-duration-fields {
+  grid-template-columns: 1fr 1fr;
+}
+
+.form-inline-error {
+  margin: -5px 0 0;
+  color: #a34f3f;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.inline-retry {
+  padding: 0;
+  border: 0;
+  color: #315847;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .analytics-toolbar {
+    align-items: stretch;
+  }
+
+  .analytics-toolbar > .field {
+    width: calc(50% - 6px);
+    flex: 1 1 135px;
+  }
+
+  .trend-period-control {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .trend-period-control legend {
+    width: 100%;
+  }
+
+  .selected-day-card {
+    padding: 18px 15px;
+  }
+
+  .selected-day-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .selected-day-controls > .field {
+    width: 100%;
+  }
+
+  .selected-day-controls > .button {
+    justify-content: center;
+  }
+
+  .manual-form-grid {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+
+  .manual-duration-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

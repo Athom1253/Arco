@@ -6,12 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PracticeCategory } from './practiceCategory';
+import type { PracticeSessionSource } from './practiceSessionSource';
 import type { PracticeStatus } from './practiceStatus';
 
 export interface PracticeSession {
   id: number;
   status: PracticeStatus;
   startedAt: Date;
+  practiceDate: Date;
   /** @nullable */
   finishedAt: Date | null;
   elapsedSeconds: number;
@@ -24,5 +26,7 @@ export interface PracticeSession {
   category: PracticeCategory;
   notes: string;
   goal: string;
+  source: PracticeSessionSource;
+  focusAreas: string[];
   createdAt: Date;
 }

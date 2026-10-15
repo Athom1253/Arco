@@ -10,16 +10,19 @@ import {
   CreatePracticeGoalResponse,
   DeletePracticeGoalParams,
   GetPracticeAchievementsResponse,
+  GetPracticeGoalsQueryParams,
   GetPracticeGoalsResponse,
   UpdatePracticeGoalBody,
   UpdatePracticeGoalParams,
   UpdatePracticeGoalResponse,
 } from "@workspace/api-zod";
 import {
+  asDateString,
   getCompletedSessionRows,
   todayDateString,
 } from "../lib/violin-data";
 import { buildAchievements, toGoal } from "../lib/violin-metrics";
+import { normalizeDateQuery } from "../lib/query-utils";
 
 const router: IRouter = Router();
 const goalLimits: Record<string, number> = {
@@ -43,12 +46,22 @@ async function getGoalRows() {
     .orderBy(practiceGoalsTable.id);
 }
 
-router.get("/violin/goals", async (_req, res): Promise<void> => {
+router.get("/violin/goals", async (req, res): Promise<void> => {
+  const query = GetPracticeGoalsQueryParams.safeParse(
+    normalizeDateQuery(req.query, "asOf"),
+  );
+  if (!query.success) {
+    res.status(400).json({ error: query.error.message });
+    return;
+  }
+
   const [goals, sessions] = await Promise.all([
     getGoalRows(),
     getCompletedSessionRows(),
   ]);
-  const today = todayDateString();
+  const today = query.data.asOf
+    ? asDateString(query.data.asOf)
+    : todayDateString();
   res.json(
     GetPracticeGoalsResponse.parse(
       goals.map((goal) => toGoal(goal, sessions, today)),

@@ -8,6 +8,7 @@
 import type { PracticeCategory } from './practiceCategory';
 
 export interface PracticeSessionUpdate {
+  practiceDate?: Date;
   /** @nullable */
   pieceId?: number | null;
   category?: PracticeCategory;
@@ -15,6 +16,11 @@ export interface PracticeSessionUpdate {
   notes?: string;
   /** @maxLength 2000 */
   goal?: string;
+  /**
+     * @maxItems 20
+     * @items.maxLength 120
+     */
+  focusAreas?: string[];
   startedAt?: Date;
   /** @minimum 0 */
   elapsedSeconds?: number;

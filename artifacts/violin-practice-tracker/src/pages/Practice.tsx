@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Check, CirclePause, CirclePlay, Music2, ShieldAlert, Timer, Trash2 } from 'lucide-react';
 import { useGetActivePracticeSession, getGetActivePracticeSessionQueryKey, useGetRepertoire, getGetRepertoireQueryKey, useStartPracticeSession, usePausePracticeSession, useResumePracticeSession, useFinishPracticeSession, useDeletePracticeSession, getGetPracticeSessionsQueryKey, getGetViolinDashboardQueryKey, getGetPracticeStatisticsQueryKey, getGetPracticeCalendarQueryKey, getGetPracticeGoalsQueryKey, getGetPracticeAchievementsQueryKey, getGetPracticePlanSummaryQueryKey } from '@workspace/api-client-react';
 import { Button, Card, Field, Modal, PageHeading, QueryState, SubmitButton } from '@/components/Primitives';
-import { formatClock } from '@/lib/utils';
+import { dateKey, formatClock } from '@/lib/utils';
 import type { PracticeCategory } from '@workspace/api-client-react';
 
 const categories: PracticeCategory[] = ['technique', 'scales', 'intonation', 'bowing', 'sight-reading', 'repertoire', 'memorisation', 'other'];
@@ -30,7 +30,7 @@ export default function Practice() {
     void client.invalidateQueries({ queryKey: getGetPracticeSessionsQueryKey() });
     void client.invalidateQueries({ queryKey: getGetViolinDashboardQueryKey() });
     void client.invalidateQueries({ queryKey: getGetPracticeStatisticsQueryKey() });
-    void client.invalidateQueries({ queryKey: getGetPracticeCalendarQueryKey({ month: new Date().toISOString().slice(0, 7) }) });
+    void client.invalidateQueries({ queryKey: getGetPracticeCalendarQueryKey({ month: dateKey(new Date()).slice(0, 7) }) });
     void client.invalidateQueries({ queryKey: getGetRepertoireQueryKey() });
     void client.invalidateQueries({ queryKey: getGetPracticeGoalsQueryKey() });
     void client.invalidateQueries({ queryKey: getGetPracticeAchievementsQueryKey() });
@@ -57,7 +57,7 @@ export default function Practice() {
           <Field label="Focus"><select value={category} onChange={(event) => setCategory(event.target.value as PracticeCategory)} data-testid="select-practice-category">{categories.map((value) => <option value={value} key={value}>{value.replace('-', ' ')}</option>)}</select></Field>
           <Field label="Intention for this session"><input value={goal} onChange={(event) => setGoal(event.target.value)} maxLength={2000} placeholder="A phrase, a passage, a feeling…" data-testid="input-practice-goal" /></Field>
         </div>}
-        {session ? <div className="timer-actions">{session.status === 'running' ? <Button variant="secondary" onClick={() => pause.mutate({ id: session.id }, { onSuccess: invalidate })} disabled={busy}><CirclePause size={18} /> Pause</Button> : <Button variant="secondary" onClick={() => resume.mutate({ id: session.id }, { onSuccess: invalidate })} disabled={busy}><CirclePlay size={18} /> Resume</Button>}<Button onClick={() => setFinishOpen(true)} disabled={busy}><Check size={18} /> Finish session</Button></div> : <Button className="start-button" onClick={() => start.mutate({ data: { pieceId: pieceId ? Number(pieceId) : null, category, goal } }, { onSuccess: invalidate })} disabled={busy}><CirclePlay size={19} /> Begin practice</Button>}
+        {session ? <div className="timer-actions">{session.status === 'running' ? <Button variant="secondary" onClick={() => pause.mutate({ id: session.id }, { onSuccess: invalidate })} disabled={busy}><CirclePause size={18} /> Pause</Button> : <Button variant="secondary" onClick={() => resume.mutate({ id: session.id }, { onSuccess: invalidate })} disabled={busy}><CirclePlay size={18} /> Resume</Button>}<Button onClick={() => setFinishOpen(true)} disabled={busy}><Check size={18} /> Finish session</Button></div> : <Button className="start-button" onClick={() => start.mutate({ data: { pieceId: pieceId ? Number(pieceId) : null, category, goal, practiceDate: dateKey(new Date()) } }, { onSuccess: invalidate })} disabled={busy}><CirclePlay size={19} /> Begin practice</Button>}
         {session && <button className="discard-link" onClick={() => { if (window.confirm('Discard this unfinished session? It will be removed from your journal.')) discard.mutate({ id: session.id }, { onSuccess: invalidate }); }} disabled={busy}><Trash2 size={14} /> Discard unfinished session</button>}
         {(start.error || pause.error || resume.error || finish.error || discard.error) && <div className="inline-error"><ShieldAlert size={16} /> Something interrupted that action. Your session is still here; please try again.</div>}
         {repertoireQuery.error && <div className="inline-error"><ShieldAlert size={16} /> Repertoire could not be loaded. You can still begin an open practice session.</div>}
