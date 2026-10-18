@@ -11,6 +11,19 @@ env = { "CI" = "true" }
 [workflows]
 runButton = "Project"
 
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "system"
+
+[[workflows.workflow.tasks]]
+task = "shell"
+run = "sh -c 'export PORT=${API_PORT:-8080}; export DATABASE_URL=\"${DATABASE_URL:-$SUPABASE_DB_URL}\"; pnpm --filter @workspace/api-server run dev'"
+
+[[workflows.workflow.tasks]]
+task = "shell"
+run = "pnpm --filter @workspace/violin-practice-tracker run dev"
+
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true
