@@ -4,6 +4,7 @@
   "license": "MIT",
   "packageManager": "pnpm@10.34.7",
   "scripts": {
+    "dev": "pnpm --filter @workspace/api-server run dev & pnpm --filter @workspace/violin-practice-tracker run dev",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"

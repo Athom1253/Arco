@@ -18,7 +18,7 @@ author = "system"
 
 [[workflows.workflow.tasks]]
 task = "shell"
-run = "sh -c 'export PORT=${PORT:-3000}; npm run dev'"
+run = "sh -c 'export PORT=${PORT:-3000}; PORT=8080 pnpm --filter @workspace/api-server run dev & PORT=$PORT pnpm --filter @workspace/violin-practice-tracker run dev'"
 
 [agent]
 skill = "code-review"
